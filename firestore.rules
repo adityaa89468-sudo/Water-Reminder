@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper to check if user is authenticated and owns the document
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Helper to check if user is the admin
+    function isAdmin() {
+      return request.auth != null && 
+        (request.auth.token.email == "adityaa89468@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+      
+      match /logs/{logId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Allow connection test for authenticated users
+    match /test/connection {
+      allow read: if request.auth != null;
+    }
+  }
+}

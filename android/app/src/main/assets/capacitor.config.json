@@ -1,0 +1,19 @@
+{
+	"appId": "com.example.water_reminder",
+	"appName": "Water Reminder",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"plugins": {
+		"AdMob": {
+			"androidAppId": "ca-app-pub-9364231981895017~9211342199"
+		},
+		"FirebaseAuthentication": {
+			"skipNativeAuth": false,
+			"providers": [
+				"google.com"
+			]
+		}
+	}
+}

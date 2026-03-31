@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User hydration settings and profile information",
+      "type": "object",
+      "properties": {
+        "firebase_uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User email" },
+        "name": { "type": "string", "description": "User display name" },
+        "daily_goal": { "type": "integer", "description": "Daily water intake goal in ml" },
+        "weight": { "type": "number", "description": "User weight in kg" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"], "description": "User gender" },
+        "wake_up_time": { "type": "string", "description": "Wake up time (HH:mm)" },
+        "sleep_time": { "type": "string", "description": "Sleep time (HH:mm)" }
+      },
+      "required": ["firebase_uid", "email", "daily_goal"]
+    },
+    "IntakeLog": {
+      "title": "Water Intake Log",
+      "description": "A single record of water consumption",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string", "description": "Firebase UID of the user" },
+        "amount": { "type": "integer", "description": "Amount of water in ml" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the water was consumed" }
+      },
+      "required": ["user_id", "amount", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document"
+    },
+    "/users/{userId}/logs/{logId}": {
+      "schema": "IntakeLog",
+      "description": "User's water intake logs"
+    }
+  }
+}

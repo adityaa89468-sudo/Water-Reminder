@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Water Reminder</string>
+    <string name="title_activity_main">Water Reminder</string>
+    <string name="package_name">com.water.reminder.app</string>
+    <string name="custom_url_scheme">com.water.reminder.app</string>
+    <string name="google_client_id">903521222865-jufbtd06inatim9dmijcjhho7h2uf6j1.apps.googleusercontent.com</string>
+</resources>
