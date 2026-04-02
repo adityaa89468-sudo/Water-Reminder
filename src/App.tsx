@@ -14,7 +14,9 @@ import {
   Trophy,
   ShieldCheck,
   FileText,
-  X
+  X,
+  Leaf,
+  Waves
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -149,6 +151,23 @@ interface IntakeLog {
 
 // --- Components ---
 
+const AppLogo = ({ className = "w-12 h-12", color = "currentColor" }: { className?: string, color?: string }) => (
+  <div className={cn("relative flex items-center justify-center", className)}>
+    <Droplets className="w-full h-full" style={{ color }} />
+    <motion.div 
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.5 }}
+      className="absolute -top-1 -right-1"
+    >
+      <Leaf className="w-1/3 h-1/3 text-emerald-400 fill-emerald-400" />
+    </motion.div>
+    <div className="absolute bottom-2 w-1/2 h-1/4 overflow-hidden opacity-40">
+      <Waves className="w-full h-full" style={{ color }} />
+    </div>
+  </div>
+);
+
 const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   useEffect(() => {
     const timer = setTimeout(onComplete, 2500);
@@ -168,19 +187,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
         className="relative"
       >
-        <img 
-          src="/logo.png" 
-          alt="Water Reminder Logo" 
-          className="w-32 h-32 object-contain"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-            const fallback = document.getElementById('splash-fallback');
-            if (fallback) fallback.style.display = 'block';
-          }}
-        />
-        <div id="splash-fallback" style={{ display: 'none' }}>
-          <Droplets className="w-24 h-24 text-white" />
-        </div>
+        <AppLogo className="w-32 h-32" color="white" />
       </motion.div>
       <motion.h1 
         className="text-white text-3xl font-bold mt-6 tracking-tight"
@@ -1009,8 +1016,8 @@ function AppContent() {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </p>
           </div>
-          <div className="bg-blue-50 p-2 rounded-xl">
-            <Droplets className="w-6 h-6 text-blue-600" />
+          <div className="bg-blue-50 p-1.5 rounded-xl">
+            <AppLogo className="w-7 h-7" color="#2563eb" />
           </div>
         </div>
       </header>
