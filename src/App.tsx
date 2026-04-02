@@ -153,17 +153,17 @@ interface IntakeLog {
 
 const AppLogo = ({ className = "w-12 h-12", color = "currentColor" }: { className?: string, color?: string }) => (
   <div className={cn("relative flex items-center justify-center", className)}>
-    <Droplets className="w-full h-full" style={{ color }} />
+    <Droplets className="w-full h-full" style={{ color: color === 'white' ? 'white' : '#0d9488' }} />
     <motion.div 
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.5 }}
       className="absolute -top-1 -right-1"
     >
-      <Leaf className="w-1/3 h-1/3 text-emerald-400 fill-emerald-400" />
+      <Leaf className="w-1/3 h-1/3 text-[#2dd4bf] fill-[#2dd4bf]" />
     </motion.div>
-    <div className="absolute bottom-2 w-1/2 h-1/4 overflow-hidden opacity-40">
-      <Waves className="w-full h-full" style={{ color }} />
+    <div className="absolute bottom-3 w-1/2 h-1/4 overflow-hidden opacity-60">
+      <Waves className="w-full h-full" style={{ color: color === 'white' ? 'white' : '#0d9488' }} />
     </div>
   </div>
 );
@@ -190,7 +190,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         <AppLogo className="w-32 h-32" color="white" />
       </motion.div>
       <motion.h1 
-        className="text-white text-3xl font-bold mt-6 tracking-tight"
+        className="text-white text-3xl font-bold mt-6 tracking-tight uppercase"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
@@ -198,12 +198,12 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
         Water Reminder
       </motion.h1>
       <motion.p 
-        className="text-blue-100 mt-2 font-medium"
+        className="text-teal-100 mt-1 font-bold uppercase tracking-[0.3em] text-[10px]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
       >
-        Stay Hydrated, Stay Healthy
+        Stay Hydrated
       </motion.p>
     </motion.div>
   );
