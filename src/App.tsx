@@ -279,6 +279,11 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
           <p className="text-xl font-bold text-slate-900">{user.streak} Days</p>
         </div>
       </div>
+
+      {/* Inline Ad */}
+      <div className="pt-4">
+        <BannerAd unitId="ca-app-pub-9364231981895017/8732039399" />
+      </div>
     </div>
   );
 };
@@ -417,6 +422,11 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
             ))
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Inline Ad */}
+      <div className="pt-4">
+        <BannerAd unitId="ca-app-pub-9364231981895017/8732039399" />
       </div>
     </div>
   );
@@ -658,6 +668,7 @@ These Terms shall be governed and construed in accordance with the laws of your 
         />
         <div className="text-center">
           <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.2em]">Water Reminder</p>
+          <p className="text-[10px] text-slate-300 mt-0.5 font-medium">Made by Aditya</p>
           <p className="text-[10px] text-slate-200 mt-1">Version 1.0.0 (Build 20260331)</p>
         </div>
       </div>
@@ -671,6 +682,11 @@ These Terms shall be governed and construed in accordance with the laws of your 
           Log Out
         </button>
       )}
+
+      {/* Inline Ad */}
+      <div className="pt-8">
+        <BannerAd unitId="ca-app-pub-9364231981895017/8732039399" />
+      </div>
 
       <LegalModal 
         isOpen={legalModal.isOpen} 
@@ -1024,7 +1040,6 @@ function AppContent() {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 z-40">
-        <BannerAd unitId="ca-app-pub-9364231981895017/8732039399" />
         <div className="max-w-lg mx-auto flex items-center justify-around px-6 py-3">
           <button 
             onClick={() => setActiveTab('home')}

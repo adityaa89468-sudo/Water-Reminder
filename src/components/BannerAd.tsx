@@ -37,15 +37,19 @@ const BannerAd: React.FC<BannerAdProps> = ({ unitId }) => {
   }
 
   return (
-    <div className="w-full bg-slate-100 border-y border-slate-200 flex flex-col items-center justify-center p-2 min-h-[60px] overflow-hidden">
-      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Advertisement</div>
-      <div className="w-full max-w-[320px] h-[50px] bg-slate-200 rounded flex items-center justify-center border border-dashed border-slate-300">
-        <span className="text-xs font-mono text-slate-500 truncate px-2">
+    <div className="w-full bg-white border border-slate-100 rounded-3xl flex flex-col items-center justify-center p-4 min-h-[100px] overflow-hidden shadow-sm">
+      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+        <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+        Advertisement
+        <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
+      </div>
+      <div className="w-full max-w-[320px] h-[50px] bg-slate-50 rounded-xl flex items-center justify-center border border-dashed border-slate-200 group hover:border-blue-200 transition-colors">
+        <span className="text-[10px] font-mono text-slate-400 group-hover:text-blue-400 transition-colors truncate px-4">
           {unitId}
         </span>
       </div>
-      <p className="text-[8px] text-slate-400 mt-1 italic">
-        AdMob Banner Slot (Web Placeholder)
+      <p className="text-[9px] text-slate-300 mt-3 italic font-medium">
+        AdMob Banner Slot
       </p>
     </div>
   );
