@@ -34,7 +34,7 @@
               "client_id": "903521222865-o1oidfsjuacc3udmheq860nvolfn5sdm.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.waterReminder"
+                "bundle_id": "com.water.reminder.app"
               }
             }
           ]

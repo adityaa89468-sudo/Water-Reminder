@@ -1,5 +1,5 @@
 {
-	"appId": "com.example.water_reminder",
+	"appId": "com.water.reminder.app",
 	"appName": "Water Reminder",
 	"webDir": "dist",
 	"server": {

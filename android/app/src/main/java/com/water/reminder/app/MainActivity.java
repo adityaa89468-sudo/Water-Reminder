@@ -1,4 +1,4 @@
-package com.example.water_reminder;
+package com.water.reminder.app;
 
 import com.getcapacitor.BridgeActivity;
 
