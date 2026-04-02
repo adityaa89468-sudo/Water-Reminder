@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Droplets, 
+  Droplets,
   Plus, 
   History, 
   Settings as SettingsIcon, 
@@ -14,9 +14,7 @@ import {
   Trophy,
   ShieldCheck,
   FileText,
-  X,
-  Leaf,
-  Waves
+  X
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -151,20 +149,14 @@ interface IntakeLog {
 
 // --- Components ---
 
-const AppLogo = ({ className = "w-12 h-12", color = "currentColor" }: { className?: string, color?: string }) => (
-  <div className={cn("relative flex items-center justify-center", className)}>
-    <Droplets className="w-full h-full" style={{ color: color === 'white' ? 'white' : '#0d9488' }} />
-    <motion.div 
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.5 }}
-      className="absolute -top-1 -right-1"
-    >
-      <Leaf className="w-1/3 h-1/3 text-[#2dd4bf] fill-[#2dd4bf]" />
-    </motion.div>
-    <div className="absolute bottom-3 w-1/2 h-1/4 overflow-hidden opacity-60">
-      <Waves className="w-full h-full" style={{ color: color === 'white' ? 'white' : '#0d9488' }} />
-    </div>
+const AppLogo = ({ className = "w-12 h-12" }: { className?: string, color?: string }) => (
+  <div className={cn("relative flex items-center justify-center overflow-hidden rounded-2xl", className)}>
+    <img 
+      src="/logo.png" 
+      alt="Water Reminder Logo" 
+      className="w-full h-full object-contain"
+      referrerPolicy="no-referrer"
+    />
   </div>
 );
 
