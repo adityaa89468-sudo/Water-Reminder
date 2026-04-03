@@ -14,7 +14,10 @@ import {
   Trophy,
   ShieldCheck,
   FileText,
-  X
+  X,
+  Scale,
+  Volume2,
+  Clock
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -124,7 +127,10 @@ const GUEST_USER: UserData = {
   gender: null,
   wake_up_time: '07:00',
   sleep_time: '22:00',
-  streak: 0
+  streak: 0,
+  notifications_enabled: true,
+  reminder_interval: 120, // in minutes
+  notification_sound: 'default'
 };
 
 interface UserData {
@@ -139,6 +145,9 @@ interface UserData {
   wake_up_time: string;
   sleep_time: string;
   streak: number;
+  notifications_enabled: boolean;
+  reminder_interval: number;
+  notification_sound: string;
 }
 
 interface IntakeLog {
@@ -467,12 +476,282 @@ const LegalModal = ({ isOpen, onClose, title, content }: { isOpen: boolean, onCl
   );
 };
 
+const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose: () => void, user: UserData, onSave: (goal: number) => void }) => {
+  const [goal, setGoal] = useState(user.daily_goal);
+  const presets = [1500, 2000, 2500, 3000, 3500, 4000];
+
+  useEffect(() => {
+    if (isOpen) {
+      setGoal(user.daily_goal);
+    }
+  }, [isOpen, user.daily_goal]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+          />
+          <motion.div 
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            className="relative w-full max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col p-8"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-2xl font-bold text-slate-900">Daily Goal</h3>
+              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <X className="w-6 h-6 text-slate-400" />
+              </button>
+            </div>
+
+            <div className="space-y-8">
+              <div className="text-center">
+                <div className="inline-flex items-center gap-4 bg-blue-50 px-8 py-4 rounded-3xl border border-blue-100">
+                  <input 
+                    type="number" 
+                    value={goal}
+                    onChange={(e) => setGoal(parseInt(e.target.value) || 0)}
+                    className="w-32 text-4xl font-black text-blue-600 bg-transparent text-center focus:outline-none"
+                  />
+                  <span className="text-xl font-bold text-blue-400">ml</span>
+                </div>
+                <p className="text-slate-400 mt-4 text-sm font-medium">Enter your custom goal or select a preset below</p>
+              </div>
+
+              {user.weight && (
+                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                      <Scale className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Recommended</p>
+                      <p className="text-sm text-emerald-600 font-medium">Based on your {user.weight}kg weight</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setGoal(user.weight! * 35)}
+                    className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-100 hover:bg-emerald-700 transition-all"
+                  >
+                    Use {user.weight * 35}ml
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-3">
+                {presets.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setGoal(p)}
+                    className={cn(
+                      "py-4 rounded-2xl font-bold transition-all border-2",
+                      goal === p 
+                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" 
+                        : "bg-white border-slate-100 text-slate-600 hover:border-blue-200"
+                    )}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  onSave(goal);
+                  onClose();
+                }}
+                className="w-full bg-blue-600 text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98]"
+              >
+                Save Goal
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const NotificationModal = ({ 
+  isOpen, 
+  onClose, 
+  user, 
+  onSave 
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  user: UserData, 
+  onSave: (data: Partial<UserData>) => void 
+}) => {
+  const [enabled, setEnabled] = useState(user.notifications_enabled);
+  const [interval, setInterval] = useState(user.reminder_interval);
+  const [sound, setSound] = useState(user.notification_sound);
+
+  useEffect(() => {
+    if (isOpen) {
+      setEnabled(user.notifications_enabled);
+      setInterval(user.reminder_interval);
+      setSound(user.notification_sound);
+    }
+  }, [isOpen, user]);
+
+  const intervals = [
+    { label: '30 min', value: 30 },
+    { label: '1 hour', value: 60 },
+    { label: '1.5 hours', value: 90 },
+    { label: '2 hours', value: 120 },
+    { label: '3 hours', value: 180 },
+  ];
+
+  const sounds = [
+    { label: 'Default', value: 'default' },
+    { label: 'Water Drop', value: 'drop' },
+    { label: 'Ocean', value: 'ocean' },
+    { label: 'Bubble', value: 'bubble' },
+  ];
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+          />
+          <motion.div 
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            className="relative w-full max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900">Notifications</h3>
+              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <X className="w-6 h-6 text-slate-400" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-8">
+              {/* Toggle */}
+              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                    <Bell className={cn("w-5 h-5", enabled ? "text-purple-600" : "text-slate-300")} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900">Reminders</p>
+                    <p className="text-xs text-slate-400">Get notified to drink water</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setEnabled(!enabled)}
+                  className={cn(
+                    "w-12 h-6 rounded-full transition-all relative",
+                    enabled ? "bg-purple-600" : "bg-slate-200"
+                  )}
+                >
+                  <motion.div 
+                    animate={{ x: enabled ? 24 : 4 }}
+                    className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm"
+                  />
+                </button>
+              </div>
+
+              {enabled && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  {/* Interval */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Clock className="w-4 h-4" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Reminder Interval</h4>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {intervals.map((item) => (
+                        <button
+                          key={item.value}
+                          onClick={() => setInterval(item.value)}
+                          className={cn(
+                            "py-3 rounded-xl font-bold text-sm transition-all border-2",
+                            interval === item.value 
+                              ? "bg-purple-50 border-purple-600 text-purple-600" 
+                              : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                          )}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sound */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Volume2 className="w-4 h-4" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider">Notification Sound</h4>
+                    </div>
+                    <div className="space-y-2">
+                      {sounds.map((item) => (
+                        <button
+                          key={item.value}
+                          onClick={() => setSound(item.value)}
+                          className={cn(
+                            "w-full p-4 rounded-2xl flex items-center justify-between transition-all border-2",
+                            sound === item.value 
+                              ? "bg-purple-50 border-purple-600 text-purple-600" 
+                              : "bg-white border-slate-100 text-slate-600 hover:border-slate-200"
+                          )}
+                        >
+                          <span className="font-bold">{item.label}</span>
+                          {sound === item.value && <CheckCircle2 className="w-5 h-5" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              <button 
+                onClick={() => {
+                  onSave({ 
+                    notifications_enabled: enabled, 
+                    reminder_interval: interval, 
+                    notification_sound: sound 
+                  });
+                  onClose();
+                }}
+                className="w-full bg-purple-600 text-white py-5 rounded-3xl font-bold text-lg shadow-xl shadow-purple-100 hover:bg-purple-700 transition-all active:scale-[0.98]"
+              >
+                Save Preferences
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const SettingsView = ({ user, onUpdate, onLogout }: { user: UserData, onUpdate: (data: Partial<UserData>) => void, onLogout: () => void }) => {
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean, title: string, content: string }>({
     isOpen: false,
     title: '',
     content: ''
   });
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleSignIn = async () => {
@@ -562,7 +841,10 @@ These Terms shall be governed and construed in accordance with the laws of your 
         
         <div className="p-2">
           <div className="space-y-1">
-            <div className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group">
+            <div 
+              onClick={() => setIsGoalModalOpen(true)}
+              className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
                   <CheckCircle2 className="w-4 h-4 text-blue-600" />
@@ -570,18 +852,57 @@ These Terms shall be governed and construed in accordance with the laws of your 
                 <span className="font-semibold text-slate-700">Daily Goal</span>
               </div>
               <div className="flex items-center gap-2">
-                <input 
-                  type="number" 
-                  value={user.daily_goal} 
-                  onChange={(e) => onUpdate({ daily_goal: parseInt(e.target.value) })}
-                  className="w-20 text-right bg-transparent font-bold text-blue-600 focus:outline-none"
-                />
-                <span className="text-slate-400 text-sm">ml</span>
+                <span className="font-bold text-blue-600">{user.daily_goal} ml</span>
                 <ChevronRight className="w-4 h-4 text-slate-300" />
               </div>
             </div>
 
             <div className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
+                  <User className="w-4 h-4 text-orange-600" />
+                </div>
+                <span className="font-semibold text-slate-700">Weight</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="number" 
+                  value={user.weight || ''} 
+                  placeholder="Set"
+                  onChange={(e) => onUpdate({ weight: parseInt(e.target.value) || null })}
+                  className="w-16 text-right bg-transparent font-bold text-orange-600 focus:outline-none placeholder:text-slate-300"
+                />
+                <span className="text-slate-400 text-sm">kg</span>
+                <ChevronRight className="w-4 h-4 text-slate-300" />
+              </div>
+            </div>
+
+            <div className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
+                  <Droplets className="w-4 h-4 text-pink-600" />
+                </div>
+                <span className="font-semibold text-slate-700">Gender</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <select 
+                  value={user.gender || ''} 
+                  onChange={(e) => onUpdate({ gender: e.target.value || null })}
+                  className="bg-transparent font-bold text-pink-600 focus:outline-none appearance-none text-right cursor-pointer"
+                >
+                  <option value="">Select</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+                <ChevronRight className="w-4 h-4 text-slate-300" />
+              </div>
+            </div>
+
+            <div 
+              onClick={() => setIsNotificationModalOpen(true)}
+              className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
                   <Bell className="w-4 h-4 text-purple-600" />
@@ -589,7 +910,9 @@ These Terms shall be governed and construed in accordance with the laws of your 
                 <span className="font-semibold text-slate-700">Reminders</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-400 text-sm">Every 2 hours</span>
+                <span className="text-slate-400 text-sm">
+                  {user.notifications_enabled ? `Every ${user.reminder_interval >= 60 ? `${user.reminder_interval / 60} hour${user.reminder_interval / 60 > 1 ? 's' : ''}` : `${user.reminder_interval} min`}` : 'Disabled'}
+                </span>
                 <ChevronRight className="w-4 h-4 text-slate-300" />
               </div>
             </div>
@@ -692,6 +1015,26 @@ These Terms shall be governed and construed in accordance with the laws of your 
         onClose={() => setLegalModal({ ...legalModal, isOpen: false })}
         title={legalModal.title}
         content={legalModal.content}
+      />
+
+      <GoalModal 
+        isOpen={isGoalModalOpen}
+        onClose={() => setIsGoalModalOpen(false)}
+        user={user}
+        onSave={(goal) => {
+          onUpdate({ daily_goal: goal });
+          setIsGoalModalOpen(false);
+        }}
+      />
+
+      <NotificationModal
+        isOpen={isNotificationModalOpen}
+        onClose={() => setIsNotificationModalOpen(false)}
+        user={user}
+        onSave={(data) => {
+          onUpdate(data);
+          setIsNotificationModalOpen(false);
+        }}
       />
     </div>
   );
@@ -811,7 +1154,10 @@ function AppContent() {
           gender: data.gender || null,
           wake_up_time: data.wake_up_time || '07:00',
           sleep_time: data.sleep_time || '22:00',
-          streak: data.streak || 0
+          streak: data.streak || 0,
+          notifications_enabled: data.notifications_enabled ?? true,
+          reminder_interval: data.reminder_interval || 120,
+          notification_sound: data.notification_sound || 'default'
         });
       } else {
         // Initialize user in Firestore if they don't exist
@@ -821,6 +1167,9 @@ function AppContent() {
           name: firebaseUser.displayName || '',
           daily_goal: 2000,
           streak: 0,
+          notifications_enabled: true,
+          reminder_interval: 120,
+          notification_sound: 'default',
           createdAt: Timestamp.now()
         };
         setDoc(userRef, newUser).catch(e => handleFirestoreError(e, OperationType.WRITE, `users/${firebaseUser.uid}`));
