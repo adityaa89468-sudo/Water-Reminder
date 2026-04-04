@@ -17,7 +17,8 @@ import {
   X,
   Scale,
   Volume2,
-  Clock
+  Clock,
+  Check
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -478,13 +479,23 @@ const LegalModal = ({ isOpen, onClose, title, content }: { isOpen: boolean, onCl
 
 const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose: () => void, user: UserData, onSave: (goal: number) => void }) => {
   const [goal, setGoal] = useState(user.daily_goal);
+  const [isSuccess, setIsSuccess] = useState(false);
   const presets = [1500, 2000, 2500, 3000, 3500, 4000];
 
   useEffect(() => {
     if (isOpen) {
       setGoal(user.daily_goal);
+      setIsSuccess(false);
     }
   }, [isOpen, user.daily_goal]);
+
+  const handleSave = () => {
+    onSave(goal);
+    setIsSuccess(true);
+    setTimeout(() => {
+      onClose();
+    }, 1500);
+  };
 
   return (
     <AnimatePresence>
@@ -512,7 +523,7 @@ const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose
 
             <div className="space-y-8">
               <div className="text-center">
-                <div className="inline-flex items-center gap-4 bg-blue-50 px-8 py-4 rounded-3xl border border-blue-100">
+                <div className="inline-flex items-center gap-4 bg-blue-50 px-8 py-4 rounded-3xl border border-blue-100 mb-6">
                   <input 
                     type="number" 
                     value={goal}
@@ -520,6 +531,22 @@ const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose
                     className="w-32 text-4xl font-black text-blue-600 bg-transparent text-center focus:outline-none"
                   />
                   <span className="text-xl font-bold text-blue-400">ml</span>
+                </div>
+                
+                <div className="px-4">
+                  <input 
+                    type="range" 
+                    min="1000" 
+                    max="6000" 
+                    step="100"
+                    value={goal}
+                    onChange={(e) => setGoal(parseInt(e.target.value))}
+                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                    <span>1000ml</span>
+                    <span>6000ml</span>
+                  </div>
                 </div>
                 <p className="text-slate-400 mt-4 text-sm font-medium">Enter your custom goal or select a preset below</p>
               </div>
@@ -562,13 +589,23 @@ const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose
               </div>
 
               <button
-                onClick={() => {
-                  onSave(goal);
-                  onClose();
-                }}
-                className="w-full bg-blue-600 text-white py-5 rounded-2xl font-bold text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-[0.98]"
+                onClick={handleSave}
+                disabled={isSuccess}
+                className={cn(
+                  "w-full py-5 rounded-2xl font-bold text-lg shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2",
+                  isSuccess 
+                    ? "bg-emerald-600 text-white shadow-emerald-100" 
+                    : "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700"
+                )}
               >
-                Save Goal
+                {isSuccess ? (
+                  <>
+                    <Check className="w-6 h-6" />
+                    Goal Updated!
+                  </>
+                ) : (
+                  'Save Goal'
+                )}
               </button>
             </div>
           </motion.div>
