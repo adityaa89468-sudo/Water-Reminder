@@ -38,6 +38,8 @@ import { useAuth } from './components/AuthProvider';
 import BannerAd from './components/BannerAd';
 import { AdMob } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
+import { App as CapApp } from '@capacitor/app';
 import { 
   loginWithGoogle, 
   logout as firebaseLogout,
@@ -1094,6 +1096,57 @@ function AppContent() {
   const [logs, setLogs] = useState<IntakeLog[]>([]);
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'settings'>('home');
   const [loading, setLoading] = useState(true);
+
+  const currentIntake = logs.reduce((acc, log) => acc + log.amount, 0);
+
+  // Sync with Android Widget
+  useEffect(() => {
+    if (Capacitor.isNativePlatform() && user) {
+      const syncWidget = async () => {
+        await Preferences.set({ key: 'current_intake', value: String(currentIntake) });
+        await Preferences.set({ key: 'daily_goal', value: String(user.daily_goal) });
+      };
+      syncWidget();
+    }
+  }, [currentIntake, user?.daily_goal]);
+
+  // Listen for widget updates on app resume
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      const checkWidgetUpdate = async () => {
+        const { value: widgetIntakeStr } = await Preferences.get({ key: 'current_intake' });
+        const widgetIntake = parseInt(widgetIntakeStr || '0');
+        
+        if (widgetIntake > currentIntake) {
+          const diff = widgetIntake - currentIntake;
+          // Add a new log entry for the difference
+          const newLog: IntakeLog = {
+            id: Date.now().toString(),
+            amount: diff,
+            timestamp: new Date().toISOString()
+          };
+          
+          if (firebaseUser) {
+            try {
+              await setDoc(doc(db, 'users', firebaseUser.uid, 'logs', newLog.id), newLog);
+            } catch (error) {
+              handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}/logs/${newLog.id}`);
+            }
+          } else {
+            const updatedLogs = [newLog, ...logs];
+            setLogs(updatedLogs);
+            localStorage.setItem('guest_logs', JSON.stringify(updatedLogs));
+          }
+        }
+      };
+
+      const resumeListener = CapApp.addListener('resume', checkWidgetUpdate);
+      
+      return () => {
+        resumeListener.then(l => l.remove());
+      };
+    }
+  }, [currentIntake, logs, firebaseUser, user?.daily_goal]);
 
   // Initialize AdMob
   useEffect(() => {
