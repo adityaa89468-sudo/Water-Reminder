@@ -17,7 +17,7 @@ const BannerAd: React.FC<BannerAdProps> = ({ unitId }) => {
           adSize: BannerAdSize.BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
-          isTesting: true // Set to false for production
+          isTesting: false // Set to false for production
         };
         await AdMob.showBanner(options);
       };

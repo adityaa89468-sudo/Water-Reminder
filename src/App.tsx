@@ -1155,7 +1155,7 @@ function AppContent() {
         try {
           await AdMob.initialize({
             testingDevices: [],
-            initializeForTesting: true,
+            initializeForTesting: false,
           });
           console.log('AdMob Initialized');
         } catch (e) {
