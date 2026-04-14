@@ -214,7 +214,24 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
 };
 
 const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[], onAddLog: (amount: number) => void }) => {
-  const currentIntake = logs.reduce((acc, log) => acc + log.amount, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  yesterday.setHours(0, 0, 0, 0);
+
+  const currentIntake = logs
+    .filter(log => new Date(log.timestamp) >= today)
+    .reduce((acc, log) => acc + log.amount, 0);
+    
+  const yesterdayIntake = logs
+    .filter(log => {
+      const d = new Date(log.timestamp);
+      return d >= yesterday && d < today;
+    })
+    .reduce((acc, log) => acc + log.amount, 0);
+
   const progress = Math.min((currentIntake / user.daily_goal) * 100, 100);
   
   return (
@@ -277,10 +294,10 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center gap-2 text-slate-400 mb-2">
-            <Bell className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Next Reminder</span>
+            <History className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Yesterday</span>
           </div>
-          <p className="text-xl font-bold text-slate-900">14:30</p>
+          <p className="text-xl font-bold text-slate-900">{yesterdayIntake} ml</p>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
           <div className="flex items-center gap-2 text-slate-400 mb-2">
@@ -335,6 +352,19 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
 
   return (
     <div className="space-y-6">
+      {/* Yesterday's Summary */}
+      <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-100 flex items-center justify-between">
+        <div>
+          <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Yesterday's Intake</p>
+          <h3 className="text-3xl font-bold">
+            {last7Days[5]?.amount || 0} <span className="text-lg font-medium opacity-80">ml</span>
+          </h3>
+        </div>
+        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+          <History className="w-6 h-6 text-white" />
+        </div>
+      </div>
+
       {/* Weekly Progress Chart */}
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Weekly Progress</h3>
@@ -1097,7 +1127,11 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'settings'>('home');
   const [loading, setLoading] = useState(true);
 
-  const currentIntake = logs.reduce((acc, log) => acc + log.amount, 0);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const currentIntake = logs
+    .filter(log => new Date(log.timestamp) >= todayStart)
+    .reduce((acc, log) => acc + log.amount, 0);
 
   // Sync with Android Widget
   useEffect(() => {
