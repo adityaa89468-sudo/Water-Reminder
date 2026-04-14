@@ -12,7 +12,8 @@
         "weight": { "type": "number", "description": "User weight in kg" },
         "gender": { "type": "string", "enum": ["male", "female", "other"], "description": "User gender" },
         "wake_up_time": { "type": "string", "description": "Wake up time (HH:mm)" },
-        "sleep_time": { "type": "string", "description": "Sleep time (HH:mm)" }
+        "sleep_time": { "type": "string", "description": "Sleep time (HH:mm)" },
+        "dark_mode": { "type": "boolean", "description": "User's theme preference" }
       },
       "required": ["firebase_uid", "email", "daily_goal"]
     },

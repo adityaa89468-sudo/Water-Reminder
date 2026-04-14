@@ -18,7 +18,9 @@ import {
   Scale,
   Volume2,
   Clock,
-  Check
+  Check,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -133,7 +135,8 @@ const GUEST_USER: UserData = {
   streak: 0,
   notifications_enabled: true,
   reminder_interval: 120, // in minutes
-  notification_sound: 'default'
+  notification_sound: 'default',
+  dark_mode: false
 };
 
 interface UserData {
@@ -151,6 +154,7 @@ interface UserData {
   notifications_enabled: boolean;
   reminder_interval: number;
   notification_sound: string;
+  dark_mode: boolean;
 }
 
 interface IntakeLog {
@@ -213,6 +217,55 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
+const WaterGlass = ({ progress, current, goal }: { progress: number, current: number, goal: number }) => {
+  return (
+    <div className="relative flex flex-col items-center justify-center py-10">
+      <div className="relative w-48 h-64 bg-white/20 dark:bg-slate-800/40 border-4 border-slate-200 dark:border-slate-700 rounded-b-[2rem] rounded-t-lg overflow-hidden shadow-inner">
+        {/* Water fill */}
+        <motion.div 
+          className="absolute bottom-0 left-0 right-0 bg-blue-500/80 dark:bg-blue-600/80"
+          initial={{ height: 0 }}
+          animate={{ height: `${progress}%` }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+        >
+          {/* Wave effect */}
+          <motion.div 
+            className="absolute -top-4 left-0 right-0 h-8 bg-blue-400/50 dark:bg-blue-500/50 rounded-[100%]"
+            animate={{ 
+              x: [-10, 10, -10],
+              scaleY: [1, 1.2, 1]
+            }}
+            transition={{ 
+              duration: 3, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+          />
+        </motion.div>
+
+        {/* Glass highlights */}
+        <div className="absolute top-0 left-4 w-2 h-full bg-white/10 rounded-full blur-[2px]" />
+        <div className="absolute top-0 right-4 w-1 h-full bg-white/5 rounded-full blur-[1px]" />
+      </div>
+
+      {/* Info Overlay */}
+      <div className="mt-8 text-center">
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="flex flex-col items-center"
+        >
+          <span className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter">{current}</span>
+          <span className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs mt-1">/ {goal} ml</span>
+          <div className="mt-4 px-4 py-1.5 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg shadow-blue-200 dark:shadow-none">
+            {Math.round(progress)}% Hydrated
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+};
+
 const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[], onAddLog: (amount: number) => void }) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -236,43 +289,8 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
   
   return (
     <div className="space-y-8">
-      {/* Progress Circle */}
-      <div className="relative flex justify-center py-8">
-        <div className="relative w-64 h-64">
-          <svg className="w-full h-full transform -rotate-90">
-            <circle
-              cx="128"
-              cy="128"
-              r="120"
-              stroke="currentColor"
-              strokeWidth="12"
-              fill="transparent"
-              className="text-slate-100"
-            />
-            <motion.circle
-              cx="128"
-              cy="128"
-              r="120"
-              stroke="currentColor"
-              strokeWidth="12"
-              fill="transparent"
-              strokeDasharray={2 * Math.PI * 120}
-              initial={{ strokeDashoffset: 2 * Math.PI * 120 }}
-              animate={{ strokeDashoffset: 2 * Math.PI * 120 * (1 - progress / 100) }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="text-blue-500"
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-bold text-slate-900">{currentIntake}</span>
-            <span className="text-slate-400 font-medium">/ {user.daily_goal} ml</span>
-            <div className="mt-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold uppercase tracking-wider">
-              {Math.round(progress)}% Goal
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Water Glass Progress */}
+      <WaterGlass progress={progress} current={currentIntake} goal={user.daily_goal} />
 
       {/* Quick Add */}
       <div className="grid grid-cols-3 gap-4">
@@ -280,31 +298,31 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
           <button
             key={amount}
             onClick={() => onAddLog(amount)}
-            className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
+            className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900 transition-all group"
           >
-            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-100 transition-colors">
-              <Plus className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+              <Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-sm font-bold text-slate-700">{amount}ml</span>
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{amount}ml</span>
           </button>
         ))}
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-400 mb-2">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
             <History className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Yesterday</span>
           </div>
-          <p className="text-xl font-bold text-slate-900">{yesterdayIntake} ml</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">{yesterdayIntake} ml</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-400 mb-2">
+        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-2">
             <Trophy className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Daily Streak</span>
           </div>
-          <p className="text-xl font-bold text-slate-900">{user.streak} Days</p>
+          <p className="text-xl font-bold text-slate-900 dark:text-white">{user.streak} Days</p>
         </div>
       </div>
 
@@ -353,7 +371,7 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
   return (
     <div className="space-y-6">
       {/* Yesterday's Summary */}
-      <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-100 flex items-center justify-between">
+      <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-100 dark:shadow-none flex items-center justify-between">
         <div>
           <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">Yesterday's Intake</p>
           <h3 className="text-3xl font-bold">
@@ -366,17 +384,17 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
       </div>
 
       {/* Weekly Progress Chart */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Weekly Progress</h3>
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Weekly Progress</h3>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={last7Days}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-10" />
               <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
               <Tooltip 
                 cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', backgroundColor: '#1e293b', color: '#f8fafc' }}
                 itemStyle={{ fontWeight: 'bold' }}
               />
               <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
@@ -387,21 +405,11 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-4 flex items-center justify-between text-xs font-medium text-slate-400">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
-            <span>Goal Met</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-slate-300 rounded-sm"></div>
-            <span>Below Goal</span>
-          </div>
-        </div>
       </div>
 
       {/* Today's Hourly Activity */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Today's Activity</h3>
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Today's Activity</h3>
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={hourlyData}>
@@ -411,11 +419,11 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-10" />
               <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
               <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', backgroundColor: '#1e293b', color: '#f8fafc' }}
                 itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
               />
               <Area type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorAmount)" />
@@ -426,10 +434,10 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
 
       {/* Log List */}
       <div className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider px-2">Today's Logs</h3>
+        <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2">Today's Logs</h3>
         <AnimatePresence>
           {todayLogs.length === 0 ? (
-            <div className="bg-white p-8 rounded-3xl border border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-slate-400 dark:text-slate-600">
               <History className="w-8 h-8 mb-2 opacity-20" />
               <p className="text-sm">No logs for today yet</p>
             </div>
@@ -440,22 +448,22 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
-                className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group"
+                className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <Droplets className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                    <Droplets className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">{log.amount}ml</p>
-                    <p className="text-xs text-slate-400">
+                    <p className="font-bold text-slate-900 dark:text-white">{log.amount}ml</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
                       {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => onDelete(log.id)}
-                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                  className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -489,15 +497,15 @@ const LegalModal = ({ isOpen, onClose, title, content }: { isOpen: boolean, onCl
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            className="relative w-full max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                <X className="w-6 h-6 text-slate-400" />
+            <div className="p-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+              <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                <X className="w-6 h-6 text-slate-400 dark:text-slate-500" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto text-slate-600 leading-relaxed space-y-4">
+            <div className="p-6 overflow-y-auto text-slate-600 dark:text-slate-400 leading-relaxed space-y-4">
               {content.split('\n\n').map((paragraph, i) => (
                 <p key={i}>{paragraph}</p>
               ))}
@@ -544,25 +552,25 @@ const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            className="relative w-full max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col p-8"
+            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col p-8"
           >
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-2xl font-bold text-slate-900">Daily Goal</h3>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                <X className="w-6 h-6 text-slate-400" />
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Daily Goal</h3>
+              <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                <X className="w-6 h-6 text-slate-400 dark:text-slate-500" />
               </button>
             </div>
 
             <div className="space-y-8">
               <div className="text-center">
-                <div className="inline-flex items-center gap-4 bg-blue-50 px-8 py-4 rounded-3xl border border-blue-100 mb-6">
+                <div className="inline-flex items-center gap-4 bg-blue-50 dark:bg-blue-900/20 px-8 py-4 rounded-3xl border border-blue-100 dark:border-blue-900/30 mb-6">
                   <input 
                     type="number" 
                     value={goal}
                     onChange={(e) => setGoal(parseInt(e.target.value) || 0)}
-                    className="w-32 text-4xl font-black text-blue-600 bg-transparent text-center focus:outline-none"
+                    className="w-32 text-4xl font-black text-blue-600 dark:text-blue-400 bg-transparent text-center focus:outline-none"
                   />
-                  <span className="text-xl font-bold text-blue-400">ml</span>
+                  <span className="text-xl font-bold text-blue-400 dark:text-blue-600">ml</span>
                 </div>
                 
                 <div className="px-4">
@@ -573,30 +581,30 @@ const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose
                     step="100"
                     value={goal}
                     onChange={(e) => setGoal(parseInt(e.target.value))}
-                    className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-600"
                   />
-                  <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                  <div className="flex justify-between mt-2 text-[10px] font-bold text-slate-300 dark:text-slate-700 uppercase tracking-wider">
                     <span>1000ml</span>
                     <span>6000ml</span>
                   </div>
                 </div>
-                <p className="text-slate-400 mt-4 text-sm font-medium">Enter your custom goal or select a preset below</p>
+                <p className="text-slate-400 dark:text-slate-500 mt-4 text-sm font-medium">Enter your custom goal or select a preset below</p>
               </div>
 
               {user.weight && (
-                <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                      <Scale className="w-5 h-5 text-emerald-600" />
+                    <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm">
+                      <Scale className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Recommended</p>
-                      <p className="text-sm text-emerald-600 font-medium">Based on your {user.weight}kg weight</p>
+                      <p className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Recommended</p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-500 font-medium">Based on your {user.weight}kg weight</p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setGoal(user.weight! * 35)}
-                    className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-100 hover:bg-emerald-700 transition-all"
+                    className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md shadow-emerald-100 dark:shadow-none hover:bg-emerald-700 transition-all"
                   >
                     Use {user.weight * 35}ml
                   </button>
@@ -611,8 +619,8 @@ const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose
                     className={cn(
                       "py-4 rounded-2xl font-bold transition-all border-2",
                       goal === p 
-                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100" 
-                        : "bg-white border-slate-100 text-slate-600 hover:border-blue-200"
+                        ? "bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100 dark:shadow-none" 
+                        : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-blue-200 dark:hover:border-blue-900"
                     )}
                   >
                     {p}
@@ -626,8 +634,8 @@ const GoalModal = ({ isOpen, onClose, user, onSave }: { isOpen: boolean, onClose
                 className={cn(
                   "w-full py-5 rounded-2xl font-bold text-lg shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2",
                   isSuccess 
-                    ? "bg-emerald-600 text-white shadow-emerald-100" 
-                    : "bg-blue-600 text-white shadow-blue-100 hover:bg-blue-700"
+                    ? "bg-emerald-600 text-white shadow-emerald-100 dark:shadow-none" 
+                    : "bg-blue-600 text-white shadow-blue-100 dark:shadow-none hover:bg-blue-700"
                 )}
               >
                 {isSuccess ? (
@@ -700,32 +708,32 @@ const NotificationModal = ({
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            className="relative w-full max-w-lg bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
           >
-            <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-900">Notifications</h3>
-              <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                <X className="w-6 h-6 text-slate-400" />
+            <div className="p-6 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Notifications</h3>
+              <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                <X className="w-6 h-6 text-slate-400 dark:text-slate-500" />
               </button>
             </div>
             
             <div className="p-6 overflow-y-auto space-y-8">
               {/* Toggle */}
-              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+              <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-                    <Bell className={cn("w-5 h-5", enabled ? "text-purple-600" : "text-slate-300")} />
+                  <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center shadow-sm">
+                    <Bell className={cn("w-5 h-5", enabled ? "text-purple-600 dark:text-purple-400" : "text-slate-300 dark:text-slate-600")} />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">Reminders</p>
-                    <p className="text-xs text-slate-400">Get notified to drink water</p>
+                    <p className="font-bold text-slate-900 dark:text-white">Reminders</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Get notified to drink water</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setEnabled(!enabled)}
                   className={cn(
                     "w-12 h-6 rounded-full transition-all relative",
-                    enabled ? "bg-purple-600" : "bg-slate-200"
+                    enabled ? "bg-purple-600" : "bg-slate-200 dark:bg-slate-700"
                   )}
                 >
                   <motion.div 
@@ -743,7 +751,7 @@ const NotificationModal = ({
                 >
                   {/* Interval */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-slate-400">
+                    <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
                       <Clock className="w-4 h-4" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">Reminder Interval</h4>
                     </div>
@@ -755,8 +763,8 @@ const NotificationModal = ({
                           className={cn(
                             "py-3 rounded-xl font-bold text-sm transition-all border-2",
                             interval === item.value 
-                              ? "bg-purple-50 border-purple-600 text-purple-600" 
-                              : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                              ? "bg-purple-50 dark:bg-purple-900/20 border-purple-600 text-purple-600 dark:text-purple-400" 
+                              : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-600 hover:border-slate-200 dark:hover:border-slate-600"
                           )}
                         >
                           {item.label}
@@ -767,7 +775,7 @@ const NotificationModal = ({
 
                   {/* Sound */}
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-slate-400">
+                    <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
                       <Volume2 className="w-4 h-4" />
                       <h4 className="text-xs font-bold uppercase tracking-wider">Notification Sound</h4>
                     </div>
@@ -779,8 +787,8 @@ const NotificationModal = ({
                           className={cn(
                             "w-full p-4 rounded-2xl flex items-center justify-between transition-all border-2",
                             sound === item.value 
-                              ? "bg-purple-50 border-purple-600 text-purple-600" 
-                              : "bg-white border-slate-100 text-slate-600 hover:border-slate-200"
+                              ? "bg-purple-50 dark:bg-purple-900/20 border-purple-600 text-purple-600 dark:text-purple-400" 
+                              : "bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-200 dark:hover:border-slate-600"
                           )}
                         >
                           <span className="font-bold">{item.label}</span>
@@ -801,7 +809,7 @@ const NotificationModal = ({
                   });
                   onClose();
                 }}
-                className="w-full bg-purple-600 text-white py-5 rounded-3xl font-bold text-lg shadow-xl shadow-purple-100 hover:bg-purple-700 transition-all active:scale-[0.98]"
+                className="w-full bg-purple-600 text-white py-5 rounded-3xl font-bold text-lg shadow-xl shadow-purple-100 dark:shadow-none hover:bg-purple-700 transition-all active:scale-[0.98]"
               >
                 Save Preferences
               </button>
@@ -814,6 +822,7 @@ const NotificationModal = ({
 };
 
 const SettingsView = ({ user, onUpdate, onLogout }: { user: UserData, onUpdate: (data: Partial<UserData>) => void, onLogout: () => void }) => {
+  console.log('SettingsView rendered with user.dark_mode:', user.dark_mode);
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean, title: string, content: string }>({
     isOpen: false,
     title: '',
@@ -885,25 +894,25 @@ These Terms shall be governed and construed in accordance with the laws of your 
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-50">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-50 dark:border-slate-800">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center overflow-hidden">
+            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center overflow-hidden">
               {user.firebase_uid === 'guest' ? (
-                <div className="w-full h-full bg-blue-50 flex items-center justify-center">
-                  <User className="w-8 h-8 text-blue-400" />
+                <div className="w-full h-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                  <User className="w-8 h-8 text-blue-400 dark:text-blue-600" />
                 </div>
               ) : user.gender === 'male' ? (
                 <img src="https://picsum.photos/seed/male/200" alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : user.gender === 'female' ? (
                 <img src="https://picsum.photos/seed/female/200" alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
-                <User className="w-8 h-8 text-slate-400" />
+                <User className="w-8 h-8 text-slate-400 dark:text-slate-600" />
               )}
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-slate-900">{user.name}</h3>
-              <p className="text-sm text-slate-400">{user.email}</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{user.name}</h3>
+              <p className="text-sm text-slate-400 dark:text-slate-500">{user.email}</p>
             </div>
           </div>
         </div>
@@ -912,26 +921,26 @@ These Terms shall be governed and construed in accordance with the laws of your 
           <div className="space-y-1">
             <div 
               onClick={() => setIsGoalModalOpen(true)}
-              className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group"
+              className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="font-semibold text-slate-700">Daily Goal</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Daily Goal</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-blue-600">{user.daily_goal} ml</span>
-                <ChevronRight className="w-4 h-4 text-slate-300" />
+                <span className="font-bold text-blue-600 dark:text-blue-400">{user.daily_goal} ml</span>
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
               </div>
             </div>
 
-            <div className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group">
+            <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-orange-50 rounded-lg flex items-center justify-center">
-                  <User className="w-4 h-4 text-orange-600" />
+                <div className="w-8 h-8 bg-orange-50 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                  <User className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                 </div>
-                <span className="font-semibold text-slate-700">Weight</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Weight</span>
               </div>
               <div className="flex items-center gap-2">
                 <input 
@@ -939,50 +948,75 @@ These Terms shall be governed and construed in accordance with the laws of your 
                   value={user.weight || ''} 
                   placeholder="Set"
                   onChange={(e) => onUpdate({ weight: parseInt(e.target.value) || null })}
-                  className="w-16 text-right bg-transparent font-bold text-orange-600 focus:outline-none placeholder:text-slate-300"
+                  className="w-16 text-right bg-transparent font-bold text-orange-600 dark:text-orange-400 focus:outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
                 />
-                <span className="text-slate-400 text-sm">kg</span>
-                <ChevronRight className="w-4 h-4 text-slate-300" />
+                <span className="text-slate-400 dark:text-slate-600 text-sm">kg</span>
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
               </div>
             </div>
 
-            <div className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group">
+            <div className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center">
-                  <Droplets className="w-4 h-4 text-pink-600" />
+                <div className="w-8 h-8 bg-pink-50 dark:bg-pink-900/30 rounded-lg flex items-center justify-center">
+                  <Droplets className="w-4 h-4 text-pink-600 dark:text-pink-400" />
                 </div>
-                <span className="font-semibold text-slate-700">Gender</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Gender</span>
               </div>
               <div className="flex items-center gap-2">
                 <select 
                   value={user.gender || ''} 
                   onChange={(e) => onUpdate({ gender: e.target.value || null })}
-                  className="bg-transparent font-bold text-pink-600 focus:outline-none appearance-none text-right cursor-pointer"
+                  className="bg-transparent font-bold text-pink-600 dark:text-pink-400 focus:outline-none appearance-none text-right cursor-pointer"
                 >
                   <option value="">Select</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                   <option value="other">Other</option>
                 </select>
-                <ChevronRight className="w-4 h-4 text-slate-300" />
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
               </div>
             </div>
 
             <div 
               onClick={() => setIsNotificationModalOpen(true)}
-              className="p-4 flex items-center justify-between hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer group"
+              className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
-                  <Bell className="w-4 h-4 text-purple-600" />
+                <div className="w-8 h-8 bg-purple-50 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                  <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 </div>
-                <span className="font-semibold text-slate-700">Reminders</span>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Reminders</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-slate-400 text-sm">
+                <span className="text-slate-400 dark:text-slate-500 text-sm">
                   {user.notifications_enabled ? `Every ${user.reminder_interval >= 60 ? `${user.reminder_interval / 60} hour${user.reminder_interval / 60 > 1 ? 's' : ''}` : `${user.reminder_interval} min`}` : 'Disabled'}
                 </span>
-                <ChevronRight className="w-4 h-4 text-slate-300" />
+                <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700" />
+              </div>
+            </div>
+
+            {/* Dark Mode Toggle */}
+            <div 
+              onClick={() => {
+                console.log('Dark mode toggle clicked. Current:', user.dark_mode);
+                onUpdate({ dark_mode: !user.dark_mode });
+              }}
+              className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-2xl transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center">
+                  {user.dark_mode ? <Moon className="w-4 h-4 text-blue-400" /> : <Sun className="w-4 h-4 text-orange-400" />}
+                </div>
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Dark Mode</span>
+              </div>
+              <div className={cn(
+                "w-10 h-5 rounded-full relative transition-colors",
+                user.dark_mode ? "bg-blue-600" : "bg-slate-200"
+              )}>
+                <motion.div 
+                  animate={{ x: user.dark_mode ? 22 : 2 }}
+                  className="absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm"
+                />
               </div>
             </div>
           </div>
@@ -1127,11 +1161,34 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'settings'>('home');
   const [loading, setLoading] = useState(true);
 
+  console.log('AppContent render. user.dark_mode:', user?.dark_mode);
+
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const currentIntake = logs
     .filter(log => new Date(log.timestamp) >= todayStart)
     .reduce((acc, log) => acc + log.amount, 0);
+
+  // Apply Dark Mode to Document
+  useEffect(() => {
+    const isDark = !!user?.dark_mode;
+    console.log('DARK MODE EFFECT:', isDark ? 'ON' : 'OFF', 'User:', user?.name, 'UID:', user?.firebase_uid);
+    
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      console.log('Added .dark to html element');
+    } else {
+      document.documentElement.classList.remove('dark');
+      console.log('Removed .dark from html element');
+    }
+    
+    // Force a small delay to ensure DOM has updated
+    const timeout = setTimeout(() => {
+      console.log('Current html classes:', document.documentElement.className);
+    }, 0);
+    
+    return () => clearTimeout(timeout);
+  }, [user?.dark_mode]);
 
   // Sync with Android Widget
   useEffect(() => {
@@ -1281,7 +1338,8 @@ function AppContent() {
           streak: data.streak || 0,
           notifications_enabled: data.notifications_enabled ?? true,
           reminder_interval: data.reminder_interval || 120,
-          notification_sound: data.notification_sound || 'default'
+          notification_sound: data.notification_sound || 'default',
+          dark_mode: data.dark_mode ?? false
         });
       } else {
         // Initialize user in Firestore if they don't exist
@@ -1294,6 +1352,7 @@ function AppContent() {
           notifications_enabled: true,
           reminder_interval: 120,
           notification_sound: 'default',
+          dark_mode: false,
           createdAt: Timestamp.now()
         };
         setDoc(userRef, newUser).catch(e => handleFirestoreError(e, OperationType.WRITE, `users/${firebaseUser.uid}`));
@@ -1419,10 +1478,12 @@ function AppContent() {
   };
 
   const handleUpdateUser = async (data: Partial<UserData>) => {
+    console.log('handleUpdateUser called with:', data);
     if (!user) return;
 
     if (user.firebase_uid === 'guest') {
       const updatedUser = { ...user, ...data };
+      console.log('Updating guest user:', updatedUser);
       setUser(updatedUser);
       localStorage.setItem('guest_user', JSON.stringify(updatedUser));
       return;
@@ -1430,6 +1491,7 @@ function AppContent() {
 
     if (!firebaseUser) return;
     try {
+      console.log('Updating firestore user:', firebaseUser.uid, data);
       const userRef = doc(db, 'users', firebaseUser.uid);
       await updateDoc(userRef, data);
     } catch (error) {
@@ -1467,21 +1529,21 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-48">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-50 pb-48 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b border-slate-100 px-6 py-4 sticky top-0 z-30">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-6 py-4 sticky top-0 z-30">
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div>
-            <h1 className="text-xl font-bold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               {activeTab === 'home' && 'Hydration'}
               {activeTab === 'history' && 'History'}
               {activeTab === 'settings' && 'Settings'}
             </h1>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </p>
           </div>
-          <div className="bg-blue-50 p-1.5 rounded-xl">
+          <div className="bg-blue-50 dark:bg-blue-900/30 p-1.5 rounded-xl">
             <AppLogo className="w-7 h-7" color="#2563eb" />
           </div>
         </div>
@@ -1511,18 +1573,18 @@ function AppContent() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 z-40">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 z-40">
         <div className="max-w-lg mx-auto flex items-center justify-around px-6 py-3">
           <button 
             onClick={() => setActiveTab('home')}
             className={cn(
               "flex flex-col items-center gap-1 p-2 transition-all",
-              activeTab === 'home' ? "text-blue-600" : "text-slate-300"
+              activeTab === 'home' ? "text-blue-600 dark:text-blue-400" : "text-slate-300 dark:text-slate-700"
             )}
           >
             <div className={cn(
               "p-2 rounded-xl transition-all",
-              activeTab === 'home' && "bg-blue-50"
+              activeTab === 'home' && "bg-blue-50 dark:bg-blue-900/30"
             )}>
               <Droplets className="w-6 h-6" />
             </div>
@@ -1533,12 +1595,12 @@ function AppContent() {
             onClick={() => setActiveTab('history')}
             className={cn(
               "flex flex-col items-center gap-1 p-2 transition-all",
-              activeTab === 'history' ? "text-blue-600" : "text-slate-300"
+              activeTab === 'history' ? "text-blue-600 dark:text-blue-400" : "text-slate-300 dark:text-slate-700"
             )}
           >
             <div className={cn(
               "p-2 rounded-xl transition-all",
-              activeTab === 'history' && "bg-blue-50"
+              activeTab === 'history' && "bg-blue-50 dark:bg-blue-900/30"
             )}>
               <History className="w-6 h-6" />
             </div>
@@ -1549,12 +1611,12 @@ function AppContent() {
             onClick={() => setActiveTab('settings')}
             className={cn(
               "flex flex-col items-center gap-1 p-2 transition-all",
-              activeTab === 'settings' ? "text-blue-600" : "text-slate-300"
+              activeTab === 'settings' ? "text-blue-600 dark:text-blue-400" : "text-slate-300 dark:text-slate-700"
             )}
           >
             <div className={cn(
               "p-2 rounded-xl transition-all",
-              activeTab === 'settings' && "bg-blue-50"
+              activeTab === 'settings' && "bg-blue-50 dark:bg-blue-900/30"
             )}>
               <SettingsIcon className="w-6 h-6" />
             </div>
