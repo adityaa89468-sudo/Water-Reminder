@@ -328,7 +328,7 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
 
       {/* Inline Ad */}
       <div className="pt-4">
-        <BannerAd unitId="ca-app-pub-9364231981895017/8732039399" />
+        <BannerAd unitId="ca-app-pub-9364231981895017/3836574355" />
       </div>
     </div>
   );
@@ -475,7 +475,7 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
 
       {/* Inline Ad */}
       <div className="pt-4">
-        <BannerAd unitId="ca-app-pub-9364231981895017/8732039399" />
+        <BannerAd unitId="ca-app-pub-9364231981895017/3836574355" />
       </div>
     </div>
   );
@@ -1110,7 +1110,7 @@ These Terms shall be governed and construed in accordance with the laws of your 
 
       {/* Inline Ad */}
       <div className="pt-8">
-        <BannerAd unitId="ca-app-pub-9364231981895017/8732039399" />
+        <BannerAd unitId="ca-app-pub-9364231981895017/3836574355" />
       </div>
 
       <LegalModal 
