@@ -14,7 +14,7 @@ const BannerAd: React.FC<BannerAdProps> = ({ unitId }) => {
       const showBanner = async () => {
         const options: BannerAdOptions = {
           adId: unitId,
-          adSize: BannerAdSize.BANNER,
+          adSize: BannerAdSize.ADAPTIVE_BANNER,
           position: BannerAdPosition.BOTTOM_CENTER,
           margin: 0,
           isTesting: false // Set to false for production

@@ -12,6 +12,7 @@ import {
   Bell,
   CheckCircle2,
   Trophy,
+  Flame,
   ShieldCheck,
   FileText,
   X,
@@ -267,6 +268,8 @@ const WaterGlass = ({ progress, current, goal }: { progress: number, current: nu
 };
 
 const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[], onAddLog: (amount: number) => void }) => {
+  const [lastAdded, setLastAdded] = useState<number | null>(null);
+  
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -287,25 +290,192 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
 
   const progress = Math.min((currentIntake / user.daily_goal) * 100, 100);
   
+  const milestones = [
+    { id: 1, label: 'Early Morning Sip', target: 200 },
+    { id: 2, label: '25% Progress', target: user.daily_goal * 0.25 },
+    { id: 3, label: 'Halfway Hydrated', target: user.daily_goal * 0.5 },
+    { id: 4, label: 'Almost There', target: user.daily_goal * 0.75 },
+    { id: 5, label: 'Daily Goal Met', target: user.daily_goal },
+  ];
+
+  const handleLogClick = (amount: number) => {
+    onAddLog(amount);
+    setLastAdded(amount);
+    setTimeout(() => setLastAdded(null), 2000);
+  };
+
+  const streakMilestones = [3, 7, 14, 30, 60, 100];
+  const nextStreakMilestone = streakMilestones.find(m => m > user.streak) || (user.streak + 1);
+
   return (
     <div className="space-y-8">
       {/* Water Glass Progress */}
-      <WaterGlass progress={progress} current={currentIntake} goal={user.daily_goal} />
+      <div className="relative">
+        <WaterGlass progress={progress} current={currentIntake} goal={user.daily_goal} />
+        
+        {/* Goal Met Celebration Overlay */}
+        <AnimatePresence>
+          {progress >= 100 && (
+            <motion.div 
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-32 z-20 flex flex-col items-center pointer-events-none"
+            >
+              <div className="bg-emerald-500 text-white p-4 rounded-full shadow-2xl animate-bounce">
+                <Trophy className="w-12 h-12" />
+              </div>
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 bg-white dark:bg-slate-900 px-6 py-2 rounded-2xl shadow-xl border border-emerald-100 dark:border-emerald-900/30"
+              >
+                <p className="text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest text-xs">Daily Goal Achieved!</p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-      {/* Quick Add */}
-      <div className="grid grid-cols-3 gap-4">
-        {[100, 200, 500].map((amount) => (
-          <button
-            key={amount}
-            onClick={() => onAddLog(amount)}
-            className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900 transition-all group"
-          >
-            <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
-              <Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      {/* Streak Banner */}
+      {user.streak > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-gradient-to-r from-orange-500 to-red-600 p-0.5 rounded-[2rem] shadow-lg shadow-orange-100 dark:shadow-none"
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-[1.95rem] p-5 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center">
+                  <Flame className="w-8 h-8 text-orange-600 dark:text-orange-400 animate-pulse" />
+                </div>
+                <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full border-2 border-white dark:border-slate-900">
+                  HOT
+                </div>
+              </div>
+              <div>
+                <h4 className="text-xl font-black text-slate-900 dark:text-white leading-none">{user.streak} DAY STREAK</h4>
+                <div className="flex items-center gap-2 mt-1">
+                  <div className="flex-1 w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(user.streak / nextStreakMilestone) * 100}%` }}
+                      className="h-full bg-orange-500"
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{user.streak}/{nextStreakMilestone}</span>
+                </div>
+              </div>
             </div>
-            <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{amount}ml</span>
-          </button>
-        ))}
+            <div className="text-right">
+              <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-[0.15em]">Level</p>
+              <p className="text-lg font-black text-slate-900 dark:text-white leading-none">
+                {user.streak < 7 ? 'Novice' : user.streak < 30 ? 'Expert' : 'Hydration God'}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Quick Add with Feedback */}
+      <div className="space-y-4">
+        <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2">Quick Log</h3>
+        <div className="grid grid-cols-3 gap-4">
+          {[100, 200, 500].map((amount) => (
+            <button
+              key={amount}
+              onClick={() => handleLogClick(amount)}
+              className="relative flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900 transition-all group overflow-hidden"
+            >
+              <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+                <Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{amount}ml</span>
+              
+              {/* Success Feedback Animation */}
+              <AnimatePresence>
+                {lastAdded === amount && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="absolute inset-0 bg-blue-600 flex items-center justify-center z-10"
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", damping: 10 }}
+                    >
+                      <CheckCircle2 className="w-8 h-8 text-white" />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Daily Milestones (The "Tasks") */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Daily Milestones</h3>
+          <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-[10px] font-bold text-slate-500 dark:text-slate-400">
+            {milestones.filter(m => currentIntake >= m.target).length} / {milestones.length}
+          </div>
+        </div>
+        <div className="space-y-3">
+          {milestones.map((m) => {
+            const isCompleted = currentIntake >= m.target;
+            return (
+              <div 
+                key={m.id}
+                className={cn(
+                  "flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500",
+                  isCompleted 
+                    ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-100/50 dark:border-blue-900/20" 
+                    : "bg-slate-50/50 dark:bg-slate-800/20 border-transparent opacity-60"
+                )}
+              >
+                <div className={cn(
+                  "w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all duration-300",
+                  isCompleted 
+                    ? "bg-blue-600 border-blue-600 scale-110" 
+                    : "border-slate-200 dark:border-slate-700"
+                )}>
+                  {isCompleted && (
+                    <motion.div
+                      initial={{ scale: 0, rotate: -45 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                    >
+                      <Check className="w-3.5 h-3.5 text-white" />
+                    </motion.div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className={cn(
+                    "text-sm font-bold transition-all",
+                    isCompleted ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-600"
+                  )}>
+                    {m.label}
+                  </p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-tight">
+                    {Math.round(m.target)} ml
+                  </p>
+                </div>
+                {isCompleted && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-blue-400 dark:text-blue-600 opacity-50" />
+                  </motion.div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -1377,9 +1547,9 @@ function AppContent() {
 
   // Streak Calculation Effect
   useEffect(() => {
-    if (!firebaseUser || !user || logs.length === 0) return;
+    if (!user || logs.length === 0) return;
 
-    const calculateStreak = async () => {
+    const streakUpdate = async () => {
       const getDateKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
       
       const logsByDay: { [key: string]: number } = {};
@@ -1407,7 +1577,8 @@ function AppContent() {
           break;
         }
         
-        if (dayOffset > 30) break;
+        // Extended streak window
+        if (dayOffset > 365) break;
       }
 
       // Check today
@@ -1417,17 +1588,12 @@ function AppContent() {
       const streakCount = todayMet ? pastStreak + 1 : pastStreak;
 
       if (streakCount !== user.streak) {
-        try {
-          const userRef = doc(db, 'users', firebaseUser.uid);
-          await updateDoc(userRef, { streak: streakCount });
-        } catch (error) {
-          console.error("Error updating streak:", error);
-        }
+        handleUpdateUser({ streak: streakCount });
       }
     };
 
-    calculateStreak();
-  }, [logs, user?.daily_goal, firebaseUser]);
+    streakUpdate();
+  }, [logs, user?.daily_goal, firebaseUser, user?.streak]);
 
   const handleAddLog = async (amount: number) => {
     if (!user) return;

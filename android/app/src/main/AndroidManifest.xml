@@ -30,7 +30,7 @@
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-9364231981895017~9211342199"
+            android:value="ca-app-pub-9364231981895017~3624609338"
         />
 
         <receiver android:name=".WaterWidget" android:exported="true" android:label="Water Tracker (Small)">
