@@ -36,6 +36,7 @@
     "google-auth-library": "^10.6.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "onesignal-cordova-plugin": "^5.3.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.7.0",

@@ -39,6 +39,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useAuth } from './components/AuthProvider';
 import BannerAd from './components/BannerAd';
+import { initOneSignal, setOneSignalExternalId, removeOneSignalExternalId } from './onesignal';
 import { AdMob } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
@@ -1408,6 +1409,20 @@ function AppContent() {
       };
     }
   }, [currentIntake, logs, firebaseUser, user?.daily_goal]);
+
+  // Initialize OneSignal
+  useEffect(() => {
+    initOneSignal();
+  }, []);
+
+  // Set OneSignal External ID when user is logged in
+  useEffect(() => {
+    if (firebaseUser) {
+      setOneSignalExternalId(firebaseUser.uid);
+    } else {
+      removeOneSignalExternalId();
+    }
+  }, [firebaseUser]);
 
   // Initialize AdMob
   useEffect(() => {
