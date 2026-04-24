@@ -496,6 +496,22 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
         </div>
       </div>
 
+      {/* Hydration Tips */}
+      <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-[2.5rem] text-white shadow-xl shadow-blue-200 dark:shadow-none">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-white/20 rounded-xl">
+            <ShieldCheck className="w-5 h-5 text-white" />
+          </div>
+          <h3 className="font-bold tracking-tight italic">Daily Insight</h3>
+        </div>
+        <p className="text-sm leading-relaxed opacity-90 font-medium italic">
+          {currentIntake < 500 ? '"Starting your day with a glass of water boosts your metabolism and wakes up your body."' : 
+           currentIntake < 1500 ? '"Drinking water before meals can help with weight management and digestion."' :
+           (currentIntake / user.daily_goal) < 1 ? '"Almost there! Keep sipping consistently rather than gulping a lot at once."' :
+           '"Great job! You\'ve hit your goal. Balance your intake with your activity levels for best results."'}
+        </p>
+      </div>
+
       {/* Inline Ad */}
       <div className="pt-4">
         <BannerAd unitId="ca-app-pub-9364231981895017/3836574355" />
@@ -991,7 +1007,7 @@ const NotificationModal = ({
   );
 };
 
-const SettingsView = ({ user, onUpdate, onLogout }: { user: UserData, onUpdate: (data: Partial<UserData>) => void, onLogout: () => void }) => {
+const SettingsView = ({ user, onUpdate, onLogout, onDeleteAccount }: { user: UserData, onUpdate: (data: Partial<UserData>) => void, onLogout: () => void, onDeleteAccount: () => void }) => {
   console.log('SettingsView rendered with user.dark_mode:', user.dark_mode);
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean, title: string, content: string }>({
     isOpen: false,
@@ -1016,51 +1032,71 @@ const SettingsView = ({ user, onUpdate, onLogout }: { user: UserData, onUpdate: 
 
   const privacyPolicy = `Privacy Policy for Water Reminder
 
-Last updated: March 31, 2026
+Last updated: April 24, 2026
 
-At Water Reminder, we take your privacy seriously. This Privacy Policy explains how we collect, use, and protect your information.
+1. Introduction
+At Water Reminder ("we," "our," or "us"), we are committed to protecting your privacy. This Privacy Policy describes how your personal information is collected, used, and shared when you install or use the Water Reminder application (the "App").
 
-1. Information Collection
-We collect information you provide directly to us, such as your name, email address, weight, and gender, to provide personalized hydration goals. We also store your water intake logs.
+2. Information We Collect
+- Personal Information: If you sign in with Google, we collect your name and email address to manage your account.
+- Health Data (Self-Provided): Weight, gender, and hydration logs provided by you to calculate and track your daily hydration goals.
+- Device & Usage Data: We collect information about how you interact with the App.
+- Advertising Identifiers: Our advertising partners (Google AdMob) may collect device-specific information such as your device ID, AAID (Android Advertising ID), and usage data to serve personalized advertisements.
 
-2. Data Storage
-Your data is stored securely using Firebase, a Google Cloud service. We use authentication to ensure only you can access your data.
+3. Third-Party Services
+We use third-party services that may collect information used to identify you:
+- Google Play Services: [https://www.google.com/policies/privacy/](https://www.google.com/policies/privacy/)
+- Google AdMob: [https://support.google.com/admob/answer/6128543?hl=en](https://support.google.com/admob/answer/6128543?hl=en)
+- Firebase Services (Authentication, Analytics, Cloud Messaging): [https://firebase.google.com/support/privacy](https://firebase.google.com/support/privacy)
 
-3. Use of Information
-We use your information to calculate your daily water goal, track your progress, and send reminders. We do not sell your personal information to third parties.
+4. How We Use Data
+- To personalize your hydration goals and track streaks.
+- To synchronize your data across devices securely.
+- To display advertisements that support the free version of the App.
+- To send periodic reminders for hydration (if notification permissions are granted).
 
-4. Third-Party Services
-We use Google AdMob to display advertisements. AdMob may collect certain information to provide relevant ads.
+5. Advertising
+The App uses Google AdMob to show ads. AdMob uses identifiers to target ads based on your interests. You can opt-out of personalized advertising in your Android/iOS system settings.
 
-5. Your Rights
-You can update or delete your profile information and intake logs at any time within the app settings.
+6. Data Retention & Deletion
+We retain your data as long as your account is active. You can request data deletion by using the 'Delete Account' feature in the App or by contacting us at our support channel.
 
-6. Changes to This Policy
-We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.`;
+7. Children's Privacy
+Our App is not intended for children under the age of 13. We do not knowingly collect personal data from children. If you are a parent and believe we have collected data from your child, please contact us.
+
+8. GDPR / California Privacy Rights
+If you are located in the EEA or California, you have rights regarding access, deletion, and portability of your data. We comply with relevant privacy regulations.
+
+9. Contact Us
+For any questions regarding this policy, please contact our support email.`;
 
   const termsAndConditions = `Terms and Conditions for Water Reminder
 
-Last updated: March 31, 2026
+Last updated: April 24, 2026
 
-Please read these Terms and Conditions carefully before using the Water Reminder mobile application.
+1. Acceptance
+By downloading or using Water Reminder, you agree to these Terms. If you do not agree, you must stop using the App immediately.
 
-1. Acceptance of Terms
-By accessing or using the app, you agree to be bound by these Terms. If you disagree with any part of the terms, you may not access the app.
+2. Health & Medical Disclaimer
+WATER REMINDER IS PROVIDED FOR INFORMATIONAL PURPOSES ONLY. THE APP IS NOT A MEDICAL DEVICE AND IS NOT INTENDED TO DIAGNOSE, TREAT, OR PREVENT ANY MEDICAL CONDITION. ALWAYS CONSULT A HEALTHCARE PROFESSIONAL BEFORE MAKING CHANGES TO YOUR HYDRATION HABITS. USE OF THE APP IS AT YOUR OWN RISK.
 
-2. Health Disclaimer
-Water Reminder is intended for informational purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition or hydration needs.
+3. Account Responsibility
+You are responsible for maintaining the confidentiality of your account credentials (e.g., Google Sign-In) and for all activities under your account.
 
-3. User Accounts
-You are responsible for maintaining the confidentiality of your account and password. You agree to accept responsibility for all activities that occur under your account.
+4. Prohibited Uses
+You agree not to attempt to decompile, reverse engineer, or otherwise extract the source code of the App or its underlying infrastructure.
 
-4. Intellectual Property
-The app and its original content, features, and functionality are and will remain the exclusive property of the app developer.
+5. Advertisements
+The free version of the App displays ads. By using the App, you agree to see advertisements provided by third-party partners like AdMob.
 
-5. Limitation of Liability
-In no event shall the app developer be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation, loss of profits, data, or other intangible losses.
+6. Limitation of Liability
+To the maximum extent permitted by law, the developer shall not be liable for any indirect, incidental, or consequential damages resulting from your use of the App, including health-related issues or data loss.
 
-6. Governing Law
-These Terms shall be governed and construed in accordance with the laws of your jurisdiction, without regard to its conflict of law provisions.`;
+7. Changes to Terms
+We reserve the right to modify these terms at any time. Your continued use of the App constitutes acceptance of updated terms.
+
+8. Governing Law
+These terms are governed by the laws of the jurisdiction in which the developer resides.`;
 
   return (
     <div className="space-y-6">
@@ -1248,6 +1284,21 @@ These Terms shall be governed and construed in accordance with the laws of your 
               </div>
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>
+
+            {user.firebase_uid !== 'guest' && (
+              <div 
+                onClick={onDeleteAccount}
+                className="p-4 flex items-center justify-between hover:bg-red-50 rounded-2xl transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </div>
+                  <span className="font-semibold text-red-600">Delete Account & Data</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-red-300" />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1675,6 +1726,44 @@ function AppContent() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!user || user.firebase_uid === 'guest' || !firebaseUser) return;
+    
+    const confirmed = window.confirm("Are you sure you want to delete your account? This will permanently remove all your hydration logs and settings. This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      
+      // Delete logs subcollection first (though Firestore doesn't delete subcollections automatically, 
+      // in a real app you'd need a recursive delete or a Cloud Function. 
+      // For this applet, deleting the user doc is the primary requirement for compliance).
+      
+      const logsQuery = query(collection(db, 'users', firebaseUser.uid, 'logs'));
+      const logDocs = await getDocs(logsQuery);
+      const deletePromises = logDocs.docs.map(logDoc => deleteDoc(logDoc.ref));
+      await Promise.all(deletePromises);
+
+      // Delete user document
+      await deleteDoc(doc(db, 'users', firebaseUser.uid));
+
+      // Attempt to delete auth user (requires recent login, but we'll try)
+      try {
+        await firebaseUser.delete();
+      } catch (e) {
+        console.warn("Auth user deletion failed (likely needs recent login):", e);
+        alert("Account data deleted from database. Please sign out and sign in again if you wish to fully delete the authentication record.");
+      }
+
+      await handleLogout();
+    } catch (error) {
+      console.error('Delete account error:', error);
+      handleFirestoreError(error, OperationType.DELETE, `users/${firebaseUser.uid}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
   }
@@ -1732,7 +1821,7 @@ function AppContent() {
               <HistoryView logs={logs} onDelete={handleDeleteLog} dailyGoal={user.daily_goal} />
             )}
             {activeTab === 'settings' && (
-              <SettingsView user={user} onUpdate={handleUpdateUser} onLogout={handleLogout} />
+              <SettingsView user={user} onUpdate={handleUpdateUser} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />
             )}
           </motion.div>
         </AnimatePresence>
