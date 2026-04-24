@@ -21,7 +21,8 @@ import {
   Clock,
   Check,
   Moon,
-  Sun
+  Sun,
+  Mail
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -1068,7 +1069,7 @@ Our App is not intended for children under the age of 13. We do not knowingly co
 If you are located in the EEA or California, you have rights regarding access, deletion, and portability of your data. We comply with relevant privacy regulations.
 
 9. Contact Us
-For any questions regarding this policy, please contact our support email.`;
+For any questions regarding this policy, please contact our support team at developercashop@gmail.com.`;
 
   const termsAndConditions = `Terms and Conditions for Water Reminder
 
@@ -1096,7 +1097,10 @@ To the maximum extent permitted by law, the developer shall not be liable for an
 We reserve the right to modify these terms at any time. Your continued use of the App constitutes acceptance of updated terms.
 
 8. Governing Law
-These terms are governed by the laws of the jurisdiction in which the developer resides.`;
+These terms are governed by the laws of the jurisdiction in which the developer resides.
+
+9. Contact
+If you have any questions about these Terms, please contact us at developercashop@gmail.com.`;
 
   return (
     <div className="space-y-6">
@@ -1285,6 +1289,19 @@ These terms are governed by the laws of the jurisdiction in which the developer 
               <ChevronRight className="w-4 h-4 text-slate-300" />
             </div>
 
+            <a 
+              href="mailto:developercashop@gmail.com"
+              className="p-4 flex items-center justify-between hover:bg-blue-50 rounded-2xl transition-colors cursor-pointer group no-underline"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <Mail className="w-4 h-4 text-blue-600" />
+                </div>
+                <span className="font-semibold text-slate-700">Support / Contact Us</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-300" />
+            </a>
+
             {user.firebase_uid !== 'guest' && (
               <div 
                 onClick={onDeleteAccount}
@@ -1315,7 +1332,7 @@ These terms are governed by the laws of the jurisdiction in which the developer 
         <div className="text-center">
           <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.2em]">Water Reminder</p>
           <p className="text-[10px] text-slate-300 mt-0.5 font-medium">Made by Aditya</p>
-          <p className="text-[10px] text-slate-200 mt-1">Version 1.0.0 (Build 20260331)</p>
+          <p className="text-[10px] text-slate-200 mt-1">Version 1.0.0</p>
         </div>
       </div>
 
