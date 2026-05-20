@@ -1,4 +1,4 @@
-package com.water.reminder.app;
+package com.aditya_production_water_reminder.app;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -11,8 +11,8 @@ import android.widget.RemoteViews;
 
 public class WaterWidget extends AppWidgetProvider {
 
-    private static final String ACTION_ADD_WATER = "com.water.reminder.app.ACTION_ADD_WATER";
-    private static final String EXTRA_AMOUNT = "com.water.reminder.app.EXTRA_AMOUNT";
+    private static final String ACTION_ADD_WATER = "com.aditya_production_water_reminder.app.ACTION_ADD_WATER";
+    private static final String EXTRA_AMOUNT = "com.aditya_production_water_reminder.app.EXTRA_AMOUNT";
     private static final String PREFS_NAME = "CapacitorStorage";
 
     @Override

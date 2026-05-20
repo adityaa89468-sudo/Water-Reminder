@@ -1,5 +1,5 @@
 {
   "name": "Water Reminder",
-  "description": "Comprehensive hydration tracking with AI-powered insights, personalized daily goals based on physical metrics, persistent streak tracking, and smart notifications to ensure you maintain a healthy lifestyle.",
+  "description": "Water Reminder is a smart hydration assistant designed to help you reach your daily water goals. Features include AI-driven hydration insights, a gamified level system, detailed progress analytics, and seamless data sync via Google. Perfect for tracking health milestones and maintaining a consistent hydration routine.",
   "requestFramePermissions": []
 }

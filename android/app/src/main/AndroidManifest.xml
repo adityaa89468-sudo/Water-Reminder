@@ -36,7 +36,7 @@
         <receiver android:name=".WaterWidget" android:exported="true" android:label="Water Tracker (Small)">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.water.reminder.app.ACTION_ADD_WATER" />
+                <action android:name="com.aditya_production_water_reminder.app.ACTION_ADD_WATER" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
@@ -46,7 +46,7 @@
         <receiver android:name=".WaterWidgetLarge" android:exported="true" android:label="Water Tracker (Large)">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.water.reminder.app.ACTION_ADD_WATER" />
+                <action android:name="com.aditya_production_water_reminder.app.ACTION_ADD_WATER" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

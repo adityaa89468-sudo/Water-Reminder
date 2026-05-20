@@ -13,7 +13,15 @@
         "gender": { "type": "string", "enum": ["male", "female", "other"], "description": "User gender" },
         "wake_up_time": { "type": "string", "description": "Wake up time (HH:mm)" },
         "sleep_time": { "type": "string", "description": "Sleep time (HH:mm)" },
-        "dark_mode": { "type": "boolean", "description": "User's theme preference" }
+        "streak": { "type": "integer", "description": "Current hydration streak in days" },
+        "notifications_enabled": { "type": "boolean", "description": "Whether push notifications are enabled" },
+        "reminder_interval": { "type": "integer", "description": "Interval between reminders in minutes" },
+        "notification_sound": { "type": "string", "description": "Selected reminder sound" },
+        "dark_mode": { "type": "boolean", "description": "User's theme preference" },
+        "level": { "type": "integer", "description": "User's hydration level" },
+        "total_liters": { "type": "number", "description": "Total water consumed in liters" },
+        "badges": { "type": "array", "items": { "type": "string" }, "description": "Array of earned badge IDs" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created" }
       },
       "required": ["firebase_uid", "email", "daily_goal"]
     },

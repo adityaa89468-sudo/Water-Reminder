@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.water.reminder.app',
+  appId: 'com.aditya_production_water_reminder.app',
   appName: 'Water Reminder',
   webDir: 'dist',
   server: {

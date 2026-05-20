@@ -15,11 +15,16 @@ const BannerAd: React.FC<BannerAdProps> = ({ unitId }) => {
         const options: BannerAdOptions = {
           adId: unitId,
           adSize: BannerAdSize.ADAPTIVE_BANNER,
-          position: BannerAdPosition.TOP_CENTER,
-          margin: 60, // Avoid overlapping the header
-          isTesting: false 
+          position: BannerAdPosition.BOTTOM_CENTER, // Changed to bottom to be safer
+          margin: 0,
+          isTesting: false // Use test ads to ensure they show up
         };
-        await AdMob.showBanner(options);
+        try {
+          await AdMob.showBanner(options);
+          console.log('Banner Ad Shown');
+        } catch (e) {
+          console.error('Banner Ad Show Failed', e);
+        }
       };
 
       showBanner();

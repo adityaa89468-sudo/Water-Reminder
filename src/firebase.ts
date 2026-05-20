@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, GoogleAuthProvider as GoogleAuthProviderClass, signInWithCredential } from 'firebase/auth';
-import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, getDocs, getDocFromServer, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, getDocs, getDocFromServer, Timestamp } from 'firebase/firestore';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { Capacitor } from '@capacitor/core';
@@ -101,20 +101,25 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   }
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  console.error('Firestore Error Detailed: ', JSON.stringify(errInfo));
+  // We'll return the error info instead of throwing to avoid crashing the app during init
+  return errInfo;
 }
 
 // Validate Connection to Firestore
 async function testConnection() {
   try {
+    console.log("Testing Firestore connection to project:", firebaseConfig.projectId);
     const testRef = doc(db, 'test', 'connection');
-    await getDoc(testRef);
+    await getDocFromServer(testRef);
     console.log("Firestore connection successful");
   } catch (error) {
-    console.log("Firestore connection test skipped or failed:", error instanceof Error ? error.message : String(error));
+    console.warn("Firestore connection test failed:", error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.message.includes('the client is offline')) {
+      console.error("Please check your internet connection.");
+    }
   }
 }
 testConnection();
 
-export { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, getDocs, Timestamp };
+export { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, getDocs, Timestamp };

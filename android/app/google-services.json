@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:903521222865:android:a816ae7fd5af32fb3105f0",
         "android_client_info": {
-          "package_name": "com.water.reminder.app"
+          "package_name": "com.aditya_production_water_reminder.app"
         }
       },
       "oauth_client": [
@@ -34,7 +34,7 @@
               "client_id": "903521222865-o1oidfsjuacc3udmheq860nvolfn5sdm.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.water.reminder.app"
+                "bundle_id": "com.aditya_production_water_reminder.app"
               }
             }
           ]

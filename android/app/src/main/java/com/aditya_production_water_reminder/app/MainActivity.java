@@ -1,4 +1,4 @@
-package com.water.reminder.app;
+package com.aditya_production_water_reminder.app;
 
 import com.getcapacitor.BridgeActivity;
 

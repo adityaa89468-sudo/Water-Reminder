@@ -22,7 +22,9 @@ import {
   Check,
   Moon,
   Sun,
-  Mail
+  Mail,
+  Medal,
+  Zap
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -61,6 +63,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   onSnapshot,
   getDocs,
   Timestamp,
@@ -138,7 +141,11 @@ const GUEST_USER: UserData = {
   notifications_enabled: true,
   reminder_interval: 120, // in minutes
   notification_sound: 'default',
-  dark_mode: false
+  dark_mode: false,
+  level: 1,
+  total_liters: 0,
+  badges: [],
+  google_fit_sync: false
 };
 
 interface UserData {
@@ -157,6 +164,10 @@ interface UserData {
   reminder_interval: number;
   notification_sound: string;
   dark_mode: boolean;
+  level: number;
+  total_liters: number;
+  badges?: string[];
+  google_fit_sync: boolean;
 }
 
 interface IntakeLog {
@@ -164,6 +175,87 @@ interface IntakeLog {
   amount: number;
   timestamp: string;
 }
+
+// --- Gamification Metadata ---
+
+interface BadgeMetadata {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  requirement: (user: UserData, logs: IntakeLog[]) => boolean;
+}
+
+const BADGES: BadgeMetadata[] = [
+  {
+    id: 'first_sip',
+    name: 'First Sip',
+    description: 'Logged your first glass of water',
+    icon: Droplets,
+    color: 'bg-blue-500',
+    requirement: (user, logs) => logs.length > 0
+  },
+  {
+    id: 'early_bird',
+    name: 'Early Bird',
+    description: 'Log a drink before 8:00 AM',
+    icon: Sun,
+    color: 'bg-amber-500',
+    requirement: (user, logs) => logs.some(log => new Date(log.timestamp).getHours() < 8)
+  },
+  {
+    id: 'night_owl',
+    name: 'Night Owl',
+    description: 'Log a drink after 10:00 PM',
+    icon: Moon,
+    color: 'bg-indigo-500',
+    requirement: (user, logs) => logs.some(log => {
+      const hour = new Date(log.timestamp).getHours();
+      return hour >= 22 || hour < 4;
+    })
+  },
+  {
+    id: 'consistency_3',
+    name: '3-Day Flash',
+    description: 'Reach a 3-day streak',
+    icon: Flame,
+    color: 'bg-orange-400',
+    requirement: (user) => user.streak >= 3
+  },
+  {
+    id: 'consistency_7',
+    name: 'Week Warrior',
+    description: 'Reach a 7-day streak',
+    icon: Flame,
+    color: 'bg-orange-600',
+    requirement: (user) => user.streak >= 7
+  },
+  {
+    id: 'consistency_30',
+    name: 'Hydration Legend',
+    description: 'Reach a 30-day streak',
+    icon: Trophy,
+    color: 'bg-red-500',
+    requirement: (user) => user.streak >= 30
+  },
+  {
+    id: 'big_gulp',
+    name: 'Big Gulp',
+    description: 'Log 500ml or more in a single entry',
+    icon: Plus,
+    color: 'bg-blue-600',
+    requirement: (user, logs) => logs.some(log => log.amount >= 500)
+  },
+  {
+    id: 'liters_10',
+    name: 'Ten Liter Tenacious',
+    description: 'Consume 10 liters total',
+    icon: Medal,
+    color: 'bg-teal-500',
+    requirement: (user) => (user.total_liters || 0) >= 10
+  }
+];
 
 // --- Components ---
 
@@ -308,12 +400,157 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
   const streakMilestones = [3, 7, 14, 30, 60, 100];
   const nextStreakMilestone = streakMilestones.find(m => m > user.streak) || (user.streak + 1);
 
+  const calculateLevel = (totalLiters: number) => {
+    return Math.floor(Math.sqrt(totalLiters / 5)) + 1;
+  };
+
+  const currentLevel = calculateLevel(user.total_liters || 0);
+
   return (
     <div className="space-y-8">
-      {/* Water Glass Progress */}
-      <div className="relative">
-        <WaterGlass progress={progress} current={currentIntake} goal={user.daily_goal} />
+      {/* Level & XP Progress */}
+      <div className="bg-white dark:bg-slate-900 mx-1 p-4 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-200">
+            {currentLevel}
+          </div>
+          <div>
+            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">Hydration Level</p>
+            <div className="flex items-center gap-2">
+              <div className="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(user.total_liters % 5) / 5 * 100}%` }}
+                  className="h-full bg-blue-500"
+                />
+              </div>
+              <span className="text-[10px] font-bold text-blue-600">XP</span>
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">Total Logs</p>
+          <p className="text-sm font-black text-slate-900 dark:text-white">{(user.total_liters || 0).toFixed(1)} L</p>
+        </div>
+      </div>
+
+      {/* Integrated Hydration Glass & Controls */}
+      <div className="relative bg-white dark:bg-slate-900 rounded-[3rem] p-8 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden group">
+        {/* Background Decorative Element */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 dark:bg-blue-900/10 rounded-full blur-3xl -mr-32 -mt-32 transition-colors group-hover:bg-blue-100 dark:group-hover:bg-blue-900/20" />
         
+        <div className="relative z-10 flex flex-col items-center">
+          <header className="w-full flex justify-between items-center mb-4">
+            <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Live Intake</h3>
+            <div className="flex gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse delay-75" />
+            </div>
+          </header>
+
+          <div className="relative w-full flex flex-col md:flex-row items-center justify-around gap-8">
+            {/* The Glass */}
+            <div className="relative flex-1 flex justify-center py-4">
+              <WaterGlass progress={progress} current={currentIntake} goal={user.daily_goal} />
+              
+              {/* Floating Quick Action Bubbles */}
+              <div className="absolute inset-0 pointer-events-none">
+                {[
+                  { ml: 100, x: -110, y: 120, delay: 0 },
+                  { ml: 200, x: 110, y: 150, delay: 0.1 },
+                  { ml: 500, x: -100, y: 10, delay: 0.2 }
+                ].map((item) => (
+                  <motion.button
+                    key={item.ml}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ 
+                      scale: 1, 
+                      opacity: 1,
+                      y: [item.y, item.y - 10, item.y]
+                    }}
+                    transition={{
+                      opacity: { duration: 0.5, delay: item.delay },
+                      scale: { type: "spring", damping: 12, delay: item.delay },
+                      y: { duration: 3, repeat: Infinity, ease: "easeInOut", delay: item.ml * 0.001 }
+                    }}
+                    onClick={() => handleLogClick(item.ml)}
+                    style={{ 
+                      left: `50%`, 
+                      top: `50%`,
+                      marginLeft: item.x,
+                      marginTop: item.y
+                    }}
+                    className="absolute pointer-events-auto w-14 h-14 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 flex flex-col items-center justify-center group/bubble transition-all hover:scale-110 active:scale-95 hover:border-blue-400 dark:hover:border-blue-500"
+                  >
+                    <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400 mb-0.5 group-hover/bubble:rotate-90 transition-transform" />
+                    <span className="text-[10px] font-black text-slate-600 dark:text-slate-400">{item.ml}</span>
+                    
+                    {/* Success Burst */}
+                    <AnimatePresence>
+                      {lastAdded === item.ml && (
+                        <motion.div 
+                          className="absolute inset-0 bg-blue-600 rounded-full flex items-center justify-center z-10"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 1.5, opacity: 0 }}
+                        >
+                          <Check className="w-6 h-6 text-white" />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Summary Panel (Only visible together with glass) */}
+            <div className="flex flex-col gap-6 md:w-48">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Progress</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-slate-900 dark:text-white leading-none">{Math.round(progress)}</span>
+                  <span className="text-sm font-bold text-blue-600">%</span>
+                </div>
+              </div>
+              
+              <div className="h-px bg-slate-100 dark:bg-slate-800 w-full" />
+              
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</p>
+                <div className="flex items-center gap-2">
+                  {progress < 30 ? (
+                    <div className="flex items-center gap-2 text-amber-500">
+                      <Zap className="w-4 h-4" />
+                      <span className="text-xs font-bold uppercase italic">Starting up</span>
+                    </div>
+                  ) : progress < 70 ? (
+                    <div className="flex items-center gap-2 text-blue-500">
+                      <Droplets className="w-4 h-4" />
+                      <span className="text-xs font-bold uppercase italic">Good flow</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-emerald-500">
+                      <Trophy className="w-4 h-4" />
+                      <span className="text-xs font-bold uppercase italic">Almost Done!</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quick Action Button for Custom Amount */}
+              <button 
+                onClick={() => {
+                  const amt = prompt('Enter amount (ml):');
+                  if (amt && !isNaN(parseInt(amt))) handleLogClick(parseInt(amt));
+                }}
+                className="mt-2 w-full py-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-400 hover:text-blue-500 hover:border-blue-200 transition-all uppercase tracking-widest"
+              >
+                + Custom Log
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Goal Met Celebration Overlay */}
         <AnimatePresence>
           {progress >= 100 && (
@@ -321,17 +558,21 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-32 z-20 flex flex-col items-center pointer-events-none"
+              className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none bg-emerald-500/10 backdrop-blur-[2px]"
             >
-              <div className="bg-emerald-500 text-white p-4 rounded-full shadow-2xl animate-bounce">
-                <Trophy className="w-12 h-12" />
-              </div>
+              <motion.div 
+                animate={{ rotate: [0, -10, 10, -10, 10, 0] }}
+                transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 2 }}
+                className="bg-emerald-500 text-white p-6 rounded-full shadow-[0_20px_50px_rgba(16,185,129,0.4)]"
+              >
+                <Trophy className="w-16 h-16" />
+              </motion.div>
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 bg-white dark:bg-slate-900 px-6 py-2 rounded-2xl shadow-xl border border-emerald-100 dark:border-emerald-900/30"
+                className="mt-6 bg-white dark:bg-slate-900 px-8 py-3 rounded-3xl shadow-xl border border-emerald-100 dark:border-emerald-900/30"
               >
-                <p className="text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest text-xs">Daily Goal Achieved!</p>
+                <p className="text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest text-sm">Goal Achieved!</p>
               </motion.div>
             </motion.div>
           )}
@@ -379,44 +620,6 @@ const Dashboard = ({ user, logs, onAddLog }: { user: UserData, logs: IntakeLog[]
         </motion.div>
       )}
 
-      {/* Quick Add with Feedback */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2">Quick Log</h3>
-        <div className="grid grid-cols-3 gap-4">
-          {[100, 200, 500].map((amount) => (
-            <button
-              key={amount}
-              onClick={() => handleLogClick(amount)}
-              className="relative flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-blue-200 dark:hover:border-blue-900 transition-all group overflow-hidden"
-            >
-              <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
-                <Plus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{amount}ml</span>
-              
-              {/* Success Feedback Animation */}
-              <AnimatePresence>
-                {lastAdded === amount && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="absolute inset-0 bg-blue-600 flex items-center justify-center z-10"
-                  >
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", damping: 10 }}
-                    >
-                      <CheckCircle2 className="w-8 h-8 text-white" />
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Daily Milestones (The "Tasks") */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
@@ -661,6 +864,99 @@ const HistoryView = ({ logs, onDelete, dailyGoal }: { logs: IntakeLog[], onDelet
       </div>
 
       {/* Inline Ad */}
+      <div className="pt-4">
+        <BannerAd unitId="ca-app-pub-9364231981895017/3836574355" />
+      </div>
+    </div>
+  );
+};
+
+const AchievementsView = ({ user, logs }: { user: UserData, logs: IntakeLog[] }) => {
+  const earnedBadgeIds = user.badges || [];
+  
+  return (
+    <div className="space-y-8">
+      {/* Summary Header */}
+      <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-[2.5rem] text-white shadow-xl">
+        <div className="flex items-center gap-6">
+          <div className="w-20 h-20 bg-white/20 rounded-[2rem] flex items-center justify-center backdrop-blur-md">
+            <Trophy className="w-10 h-10 text-white" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-black tracking-tight">{earnedBadgeIds.length}</h2>
+            <p className="text-sm font-bold text-indigo-100 uppercase tracking-widest">Achievements Earned</p>
+            <div className="mt-2 h-1.5 w-32 bg-white/20 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${(earnedBadgeIds.length / BADGES.length) * 100}%` }}
+                className="h-full bg-white"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Level Card */}
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-100">
+            {user.level || 1}
+          </div>
+          <div>
+            <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Level {user.level || 1}</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">Hydration Expert</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Lifetime Intake</p>
+          <p className="text-lg font-black text-blue-600">{(user.total_liters || 0).toFixed(1)} L</p>
+        </div>
+      </div>
+
+      {/* Badges Grid */}
+      <div className="grid grid-cols-2 gap-4">
+        {BADGES.map((badge) => {
+          const isEarned = earnedBadgeIds.includes(badge.id);
+          const Icon = badge.icon;
+          
+          return (
+            <motion.div
+              key={badge.id}
+              initial={false}
+              className={cn(
+                "relative p-6 rounded-[2rem] border transition-all duration-500 overflow-hidden flex flex-col items-center text-center",
+                isEarned 
+                  ? "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-sm" 
+                  : "bg-slate-50/50 dark:bg-slate-900/30 border-transparent opacity-40 grayscale"
+              )}
+            >
+              <div className={cn(
+                "w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-transform duration-500",
+                isEarned ? `${badge.color} text-white shadow-lg` : "bg-slate-200 dark:bg-slate-800 text-slate-400"
+              )}>
+                <Icon className="w-8 h-8" />
+              </div>
+              <h5 className={cn(
+                "font-black text-sm uppercase tracking-tight mb-1",
+                isEarned ? "text-slate-900 dark:text-white" : "text-slate-400 dark:text-slate-600"
+              )}>
+                {badge.name}
+              </h5>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
+                {badge.description}
+              </p>
+
+              {!isEarned && (
+                <div className="absolute top-2 right-4">
+                  <ShieldCheck className="w-4 h-4 text-slate-200 dark:text-slate-800" />
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Completion Ad */}
       <div className="pt-4">
         <BannerAd unitId="ca-app-pub-9364231981895017/3836574355" />
       </div>
@@ -1033,74 +1329,63 @@ const SettingsView = ({ user, onUpdate, onLogout, onDeleteAccount }: { user: Use
 
   const privacyPolicy = `Privacy Policy for Water Reminder
 
-Last updated: April 24, 2026
+Last updated: April 28, 2026
 
-1. Introduction
-At Water Reminder ("we," "our," or "us"), we are committed to protecting your privacy. This Privacy Policy describes how your personal information is collected, used, and shared when you install or use the Water Reminder application (the "App").
+At Water Reminder, we are committed to protecting your privacy and providing a transparent experience. This policy explains how we handle your data and your rights as a user.
 
-2. Information We Collect
-- Personal Information: If you sign in with Google, we collect your name and email address to manage your account.
-- Health Data (Self-Provided): Weight, gender, and hydration logs provided by you to calculate and track your daily hydration goals.
-- Device & Usage Data: We collect information about how you interact with the App.
-- Advertising Identifiers: Our advertising partners (Google AdMob) may collect device-specific information such as your device ID, AAID (Android Advertising ID), and usage data to serve personalized advertisements.
+1. Information We Collect
+We collect information to provide personalized hydration tracking:
+- Profile Data: Name, email address, physical metrics (weight, gender) provided by you.
+- Hydration Data: Water intake logs, timestamps, and streak history.
+- Device Identifiers: We use Google AdMob which may collect device identifiers (e.g., Android Advertising ID) and usage statistics.
 
-3. Third-Party Services
-We use third-party services that may collect information used to identify you:
-- Google Play Services: [https://www.google.com/policies/privacy/](https://www.google.com/policies/privacy/)
-- Google AdMob: [https://support.google.com/admob/answer/6128543?hl=en](https://support.google.com/admob/answer/6128543?hl=en)
-- Firebase Services (Authentication, Analytics, Cloud Messaging): [https://firebase.google.com/support/privacy](https://firebase.google.com/support/privacy)
+2. Third-Party Services
+To provide a free, feature-rich experience, we use trusted third-party providers:
+- Google AdMob: For displaying advertisements. AdMob uses identifiers to show personalized ads.
+- Firebase: For cloud database storage (Firestore), analytics, and secure user authentication.
 
-4. How We Use Data
-- To personalize your hydration goals and track streaks.
-- To synchronize your data across devices securely.
-- To display advertisements that support the free version of the App.
-- To send periodic reminders for hydration (if notification permissions are granted).
+3. Data Use & Storage
+Your data is used solely to:
+- Calculate and track your personalized daily water goals.
+- Sync your data across devices securely via Firebase.
+- Show relevant advertisements.
 
-5. Advertising
-The App uses Google AdMob to show ads. AdMob uses identifiers to target ads based on your interests. You can opt-out of personalized advertising in your Android/iOS system settings.
+4. Data Deletion & Your Rights
+You have full control over your data. You can delete your account and all associated data (logs, profile info) directly within the App settings at any time. This action is permanent and immediate.
 
-6. Data Retention & Deletion
-We retain your data as long as your account is active. You can request data deletion by using the 'Delete Account' feature in the App or by contacting us at our support channel.
+5. Children's Privacy
+Water Reminder is not intended for children under 13. We do not knowingly collect personal information from children under 13.
 
-7. Children's Privacy
-Our App is not intended for children under the age of 13. We do not knowingly collect personal data from children. If you are a parent and believe we have collected data from your child, please contact us.
-
-8. GDPR / California Privacy Rights
-If you are located in the EEA or California, you have rights regarding access, deletion, and portability of your data. We comply with relevant privacy regulations.
-
-9. Contact Us
-For any questions regarding this policy, please contact our support team at developercashop@gmail.com.`;
+6. Contact Us
+If you have any questions about your privacy, please contact us at developercashop@gmail.com.`;
 
   const termsAndConditions = `Terms and Conditions for Water Reminder
 
-Last updated: April 24, 2026
+Last updated: April 28, 2026
 
-1. Acceptance
-By downloading or using Water Reminder, you agree to these Terms. If you do not agree, you must stop using the App immediately.
+1. Acceptance of Terms
+By downloading or using Water Reminder, you agree to be bound by these terms. If you do not agree, you must stop using the App immediately.
 
-2. Health & Medical Disclaimer
-WATER REMINDER IS PROVIDED FOR INFORMATIONAL PURPOSES ONLY. THE APP IS NOT A MEDICAL DEVICE AND IS NOT INTENDED TO DIAGNOSE, TREAT, OR PREVENT ANY MEDICAL CONDITION. ALWAYS CONSULT A HEALTHCARE PROFESSIONAL BEFORE MAKING CHANGES TO YOUR HYDRATION HABITS. USE OF THE APP IS AT YOUR OWN RISK.
+2. Medical Disclaimer
+Water Reminder is NOT a medical device. Hydration needs vary by individual. Always consult with a healthcare professional regarding your specific health and hydration needs. Use of the App and reliance on any information provided is solely at your own risk.
 
-3. Account Responsibility
-You are responsible for maintaining the confidentiality of your account credentials (e.g., Google Sign-In) and for all activities under your account.
+3. User Responsibility
+You are responsible for providing accurate data (weight, gender) for goal calculation. You are responsible for maintaining the security of your device and authentication account.
 
-4. Prohibited Uses
-You agree not to attempt to decompile, reverse engineer, or otherwise extract the source code of the App or its underlying infrastructure.
+4. Advertisements
+The free version of the App integrates Google AdMob to display advertisements. By using the App, you consent to seeing non-intrusive advertisements supported by third-party partners.
 
-5. Advertisements
-The free version of the App displays ads. By using the App, you agree to see advertisements provided by third-party partners like AdMob.
+5. Data Security
+While we use industry-standard services (Firebase) to protect your data, you are responsible for maintaining the security of your device and authentication account.
 
 6. Limitation of Liability
-To the maximum extent permitted by law, the developer shall not be liable for any indirect, incidental, or consequential damages resulting from your use of the App, including health-related issues or data loss.
+In no event shall the developer be liable for any health issues, data loss, or indirect damages resulting from the use or inability to use the App.
 
 7. Changes to Terms
 We reserve the right to modify these terms at any time. Your continued use of the App constitutes acceptance of updated terms.
 
-8. Governing Law
-These terms are governed by the laws of the jurisdiction in which the developer resides.
-
-9. Contact
-If you have any questions about these Terms, please contact us at developercashop@gmail.com.`;
+8. Contact
+For questions or support, reach us at: developercashop@gmail.com`;
 
   return (
     <div className="space-y-6">
@@ -1396,8 +1681,9 @@ function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState<UserData | null>(null);
   const [logs, setLogs] = useState<IntakeLog[]>([]);
-  const [activeTab, setActiveTab] = useState<'home' | 'history' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'history' | 'achievements' | 'settings'>('home');
   const [loading, setLoading] = useState(true);
+  const [newBadge, setNewBadge] = useState<BadgeMetadata | null>(null);
 
   console.log('AppContent render. user.dark_mode:', user?.dark_mode);
 
@@ -1479,13 +1765,15 @@ function AppContent() {
 
   // Initialize AdMob
   useEffect(() => {
+    let initialized = false;
     const initAdMob = async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (Capacitor.isNativePlatform() && !initialized) {
         try {
           await AdMob.initialize({
             testingDevices: [],
-            initializeForTesting: false,
+            initializeForTesting: true, // IMPORTANT: Enable testing for dev builds
           });
+          initialized = true;
           console.log('AdMob Initialized');
         } catch (e) {
           console.error('AdMob Initialization Failed', e);
@@ -1554,9 +1842,8 @@ function AppContent() {
     thirtyDaysAgo.setHours(0, 0, 0, 0);
     
     const logsQuery = query(
-      logsRef, 
-      where('timestamp', '>=', Timestamp.fromDate(thirtyDaysAgo)),
-      orderBy('timestamp', 'desc')
+      logsRef,
+      limit(50)
     );
 
     const unsubUser = onSnapshot(userRef, (docSnap) => {
@@ -1577,26 +1864,58 @@ function AppContent() {
           notifications_enabled: data.notifications_enabled ?? true,
           reminder_interval: data.reminder_interval || 120,
           notification_sound: data.notification_sound || 'default',
-          dark_mode: data.dark_mode ?? false
+          dark_mode: data.dark_mode ?? false,
+          level: data.level || 1,
+          total_liters: data.total_liters || 0,
+          badges: data.badges || [],
+          google_fit_sync: data.google_fit_sync ?? false
         });
       } else {
         // Initialize user in Firestore if they don't exist
-        const newUser = {
+        const newUser: UserData = {
+          id: 0,
           firebase_uid: firebaseUser.uid,
           email: firebaseUser.email || '',
+          google_id: '',
           name: firebaseUser.displayName || '',
           daily_goal: 2000,
+          weight: null,
+          gender: null,
+          wake_up_time: '07:00',
+          sleep_time: '22:00',
           streak: 0,
           notifications_enabled: true,
           reminder_interval: 120,
           notification_sound: 'default',
           dark_mode: false,
+          level: 1,
+          total_liters: 0,
+          badges: [],
+          google_fit_sync: false
+        };
+        
+        // Optimistically set user state while waiting for Firestore
+        setUser(newUser);
+        
+        // Save to Firestore (include createdAt for DB side)
+        const dbUser = {
+          ...newUser,
           createdAt: Timestamp.now()
         };
-        setDoc(userRef, newUser).catch(e => handleFirestoreError(e, OperationType.WRITE, `users/${firebaseUser.uid}`));
+        // Remove non-serializable fields if any or just fields not in DB schema
+        delete (dbUser as any).id;
+        delete (dbUser as any).google_id;
+
+        setDoc(userRef, dbUser).catch(e => {
+          setLoading(false);
+          handleFirestoreError(e, OperationType.WRITE, `users/${firebaseUser.uid}`);
+        });
       }
       setLoading(false);
-    }, (error) => handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`));
+    }, (error) => {
+      setLoading(false);
+      handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
+    });
 
     const unsubLogs = onSnapshot(logsQuery, (snapshot) => {
       const logsData = snapshot.docs.map(doc => ({
@@ -1605,7 +1924,12 @@ function AppContent() {
         timestamp: doc.data().timestamp.toDate().toISOString()
       }));
       setLogs(logsData);
-    }, (error) => handleFirestoreError(error, OperationType.LIST, `users/${firebaseUser.uid}/logs`));
+    }, (error) => {
+      console.error('Logs Snapshot Error:', error);
+      // We don't necessarily want to stop the whole app if logs fail, 
+      // but we should at least not hang.
+      handleFirestoreError(error, OperationType.LIST, `users/${firebaseUser.uid}/logs`);
+    });
 
     return () => {
       unsubUser();
@@ -1621,12 +1945,16 @@ function AppContent() {
       const getDateKey = (d: Date) => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
       
       const logsByDay: { [key: string]: number } = {};
+      let totalAmount = 0;
+
       logs.forEach(log => {
         const date = new Date(log.timestamp);
         const dateKey = getDateKey(date);
         logsByDay[dateKey] = (logsByDay[dateKey] || 0) + log.amount;
+        totalAmount += log.amount;
       });
 
+      const totalLiters = totalAmount / 1000;
       const today = new Date();
       
       // Check backwards from yesterday
@@ -1655,8 +1983,34 @@ function AppContent() {
 
       const streakCount = todayMet ? pastStreak + 1 : pastStreak;
 
-      if (streakCount !== user.streak) {
-        handleUpdateUser({ streak: streakCount });
+      const updates: Partial<UserData> = {};
+      
+      // Update streak
+      if (streakCount !== user.streak) updates.streak = streakCount;
+      
+      // Update liters and level
+      if (Math.abs(totalLiters - (user.total_liters || 0)) > 0.05) {
+        updates.total_liters = totalLiters;
+        updates.level = Math.floor(Math.sqrt(totalLiters / 5)) + 1;
+      }
+
+      // Check for new badges
+      const earnedBadges = user.badges || [];
+      const newBadgesToUnlock = BADGES.filter(badge => 
+        !earnedBadges.includes(badge.id) && badge.requirement(user, logs)
+      );
+
+      if (newBadgesToUnlock.length > 0) {
+        const updatedBadgeIds = [...earnedBadges, ...newBadgesToUnlock.map(b => b.id)];
+        updates.badges = updatedBadgeIds;
+        setNewBadge(newBadgesToUnlock[newBadgesToUnlock.length - 1]);
+        
+        // Auto-clear notification after 5 seconds
+        setTimeout(() => setNewBadge(null), 5000);
+      }
+
+      if (Object.keys(updates).length > 0) {
+        handleUpdateUser(updates);
       }
     };
 
@@ -1781,8 +2135,12 @@ function AppContent() {
     }
   };
 
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+  }, []);
+
   if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
   if (loading) {
@@ -1809,6 +2167,7 @@ function AppContent() {
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               {activeTab === 'home' && 'Hydration'}
               {activeTab === 'history' && 'History'}
+              {activeTab === 'achievements' && 'Badges'}
               {activeTab === 'settings' && 'Settings'}
             </h1>
             <p className="text-xs text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">
@@ -1836,6 +2195,9 @@ function AppContent() {
             )}
             {activeTab === 'history' && (
               <HistoryView logs={logs} onDelete={handleDeleteLog} dailyGoal={user.daily_goal} />
+            )}
+            {activeTab === 'achievements' && (
+              <AchievementsView user={user} logs={logs} />
             )}
             {activeTab === 'settings' && (
               <SettingsView user={user} onUpdate={handleUpdateUser} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} />
@@ -1880,6 +2242,22 @@ function AppContent() {
           </button>
 
           <button 
+            onClick={() => setActiveTab('achievements')}
+            className={cn(
+              "flex flex-col items-center gap-1 p-2 transition-all",
+              activeTab === 'achievements' ? "text-blue-600 dark:text-blue-400" : "text-slate-300 dark:text-slate-700"
+            )}
+          >
+            <div className={cn(
+              "p-2 rounded-xl transition-all",
+              activeTab === 'achievements' && "bg-blue-50 dark:bg-blue-900/30"
+            )}>
+              <Trophy className="w-6 h-6" />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-widest">Badges</span>
+          </button>
+
+          <button 
             onClick={() => setActiveTab('settings')}
             className={cn(
               "flex flex-col items-center gap-1 p-2 transition-all",
@@ -1896,6 +2274,35 @@ function AppContent() {
           </button>
         </div>
       </nav>
+
+      {/* Achievement Popup Notification */}
+      <AnimatePresence>
+        {newBadge && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-32 left-6 right-6 z-[60]"
+          >
+            <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 p-6 rounded-[2.5rem] shadow-2xl flex items-center gap-6 border-4 border-yellow-400">
+              <div className="w-16 h-16 bg-yellow-400 rounded-2xl flex items-center justify-center shrink-0 shadow-lg rotate-12">
+                <Trophy className="w-8 h-8 text-slate-900" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-yellow-400 mb-1">New Achievement!</p>
+                <h4 className="text-xl font-black tracking-tight leading-none mb-1">{newBadge.name}</h4>
+                <p className="text-xs opacity-70 font-medium">{newBadge.description}</p>
+              </div>
+              <button 
+                onClick={() => setNewBadge(null)}
+                className="ml-auto p-2 hover:bg-white/10 dark:hover:bg-slate-100 rounded-full"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
