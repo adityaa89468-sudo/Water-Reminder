@@ -9,7 +9,7 @@ import firebaseConfig from './firebase-applet-config.json';
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId || '(default)');
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-962fa691-cf68-4506-aa57-bc0738e34b65');
 export const googleProvider = new GoogleAuthProvider();
 
 // FCM Functions

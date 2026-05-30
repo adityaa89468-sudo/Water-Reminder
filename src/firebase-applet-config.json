@@ -1,7 +1,10 @@
 {
-  "apiKey": "AIzaSyCfq7noLkLLi2dbjil4WEMlirF7Z4oTD68",
-  "authDomain": "water-reminder-8ab26.firebaseapp.com",
   "projectId": "water-reminder-8ab26",
+  "appId": "1:903521222865:web:2780ba4a376db15e3105f0",
+  "apiKey": "AIzaSyAkfNCsTcx5kIpf0WlYFVBUZhgtwXg85es",
+  "authDomain": "water-reminder-8ab26.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-962fa691-cf68-4506-aa57-bc0738e34b65",
   "storageBucket": "water-reminder-8ab26.firebasestorage.app",
-  "appId": "1:903521222865:android:a816ae7fd5af32fb3105f0"
+  "messagingSenderId": "903521222865",
+  "measurementId": ""
 }

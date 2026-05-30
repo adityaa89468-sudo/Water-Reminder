@@ -24,7 +24,8 @@ import {
   Sun,
   Mail,
   Medal,
-  Zap
+  Zap,
+  WifiOff
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -1684,6 +1685,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<'home' | 'history' | 'achievements' | 'settings'>('home');
   const [loading, setLoading] = useState(true);
   const [newBadge, setNewBadge] = useState<BadgeMetadata | null>(null);
+  const [firestoreError, setFirestoreError] = useState<string | null>(null);
 
   console.log('AppContent render. user.dark_mode:', user?.dark_mode);
 
@@ -1743,7 +1745,11 @@ function AppContent() {
           
           if (firebaseUser) {
             try {
-              await setDoc(doc(db, 'users', firebaseUser.uid, 'logs', newLog.id), newLog);
+              await setDoc(doc(db, 'users', firebaseUser.uid, 'logs', newLog.id), {
+                user_id: firebaseUser.uid,
+                amount: diff,
+                timestamp: Timestamp.now()
+              });
             } catch (error) {
               handleFirestoreError(error, OperationType.WRITE, `users/${firebaseUser.uid}/logs/${newLog.id}`);
             }
@@ -1872,6 +1878,7 @@ function AppContent() {
     };
 
     const unsubUser = onSnapshot(userRef, (docSnap) => {
+      setFirestoreError(null);
       if (docSnap.exists()) {
         const data = docSnap.data();
         setUser({
@@ -1941,12 +1948,14 @@ function AppContent() {
           migrateGuestData(firebaseUser.uid);
         }).catch(e => {
           setLoading(false);
+          setFirestoreError(e instanceof Error ? e.message : String(e));
           handleFirestoreError(e, OperationType.WRITE, `users/${firebaseUser.uid}`);
         });
       }
       setLoading(false);
     }, (error) => {
       setLoading(false);
+      setFirestoreError(error instanceof Error ? error.message : String(error));
       handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
     });
 
@@ -2174,6 +2183,58 @@ function AppContent() {
 
   if (showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  if (firestoreError) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center transition-colors duration-300">
+        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-8 rounded-3xl shadow-xl max-w-sm w-full space-y-6">
+          <div className="w-16 h-16 bg-red-50 dark:bg-red-950/30 text-red-500 rounded-2xl flex items-center justify-center mx-auto">
+            <WifiOff className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Profile Sync Error</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              We encountered an issue communicating with the database. You can try to reconnect or proceed in guest offline mode.
+            </p>
+            {firestoreError && (
+              <p className="text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/20 p-3 rounded-xl font-mono text-left break-all max-h-24 overflow-y-auto">
+                {firestoreError}
+              </p>
+            )}
+          </div>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setLoading(true);
+                setFirestoreError(null);
+                window.location.reload();
+              }}
+              className="w-full min-h-[44px] py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 active:scale-95 transition-all text-sm shadow-md"
+            >
+              Retry Connection
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  setFirestoreError(null);
+                  await firebaseLogout();
+                  setUser(null);
+                  setLogs([]);
+                } catch (e) {
+                  console.error(e);
+                  setLoading(false);
+                }
+              }}
+              className="w-full min-h-[44px] py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all text-sm"
+            >
+              Use Offline Mode (Guest)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (loading) {
