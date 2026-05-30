@@ -1686,8 +1686,33 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
   const [newBadge, setNewBadge] = useState<BadgeMetadata | null>(null);
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  console.log('AppContent render. user.dark_mode:', user?.dark_mode);
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    const saved = localStorage.getItem('last_user_dark_mode');
+    if (saved) return saved === 'true';
+    const savedUser = localStorage.getItem('guest_user');
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        return !!parsed.dark_mode;
+      } catch (e) {}
+    }
+    return false;
+  });
+
+  console.log('AppContent render. user.dark_mode:', user?.dark_mode, 'isDarkTheme:', isDarkTheme);
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -1695,12 +1720,20 @@ function AppContent() {
     .filter(log => new Date(log.timestamp) >= todayStart)
     .reduce((acc, log) => acc + log.amount, 0);
 
+  // Sync dark theme setting to state and cache
+  useEffect(() => {
+    if (user) {
+      const isDark = !!user.dark_mode;
+      setIsDarkTheme(isDark);
+      localStorage.setItem('last_user_dark_mode', String(isDark));
+    }
+  }, [user?.dark_mode]);
+
   // Apply Dark Mode to Document
   useEffect(() => {
-    const isDark = !!user?.dark_mode;
-    console.log('DARK MODE EFFECT:', isDark ? 'ON' : 'OFF', 'User:', user?.name, 'UID:', user?.firebase_uid);
+    console.log('DARK MODE EFFECT:', isDarkTheme ? 'ON' : 'OFF', 'User:', user?.name, 'UID:', user?.firebase_uid);
     
-    if (isDark) {
+    if (isDarkTheme) {
       document.documentElement.classList.add('dark');
       console.log('Added .dark to html element');
     } else {
@@ -1714,7 +1747,7 @@ function AppContent() {
     }, 0);
     
     return () => clearTimeout(timeout);
-  }, [user?.dark_mode]);
+  }, [isDarkTheme, user?.name, user?.firebase_uid]);
 
   // Sync with Android Widget
   useEffect(() => {
@@ -1955,8 +1988,44 @@ function AppContent() {
       setLoading(false);
     }, (error) => {
       setLoading(false);
-      setFirestoreError(error instanceof Error ? error.message : String(error));
-      handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const isNetworkErr = errMsg.toLowerCase().includes('offline') ||
+                           errMsg.toLowerCase().includes('network') ||
+                           errMsg.toLowerCase().includes('reach') ||
+                           errMsg.toLowerCase().includes('connection') ||
+                           errMsg.toLowerCase().includes('failed') ||
+                           errMsg.toLowerCase().includes('unreachable');
+      
+      if (isNetworkErr) {
+        console.warn("Firestore connection is offline, loading cached/default guest data:", errMsg);
+        setIsOffline(true);
+        const savedUser = localStorage.getItem('guest_user');
+        const savedUserData = savedUser ? JSON.parse(savedUser) : null;
+        setUser({
+          id: 0,
+          firebase_uid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          google_id: '',
+          name: firebaseUser.displayName || savedUserData?.name || 'Hydration User (Offline)',
+          daily_goal: savedUserData?.daily_goal || 2000,
+          weight: savedUserData?.weight || null,
+          gender: savedUserData?.gender || null,
+          wake_up_time: savedUserData?.wake_up_time || '07:00',
+          sleep_time: savedUserData?.sleep_time || '22:00',
+          streak: savedUserData?.streak || 0,
+          notifications_enabled: savedUserData?.notifications_enabled ?? true,
+          reminder_interval: savedUserData?.reminder_interval || 120,
+          notification_sound: savedUserData?.notification_sound || 'default',
+          dark_mode: savedUserData?.dark_mode ?? false,
+          level: savedUserData?.level || 1,
+          total_liters: savedUserData?.total_liters || 0,
+          badges: savedUserData?.badges || [],
+          google_fit_sync: false
+        });
+      } else {
+        setFirestoreError(errMsg);
+        handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
+      }
     });
 
     const unsubLogs = onSnapshot(logsQuery, (snapshot) => {
@@ -1968,8 +2037,22 @@ function AppContent() {
       setLogs(logsData);
     }, (error) => {
       console.error('Logs Snapshot Error:', error);
-      // We don't necessarily want to stop the whole app if logs fail, 
-      // but we should at least not hang.
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const isNetworkErr = errMsg.toLowerCase().includes('offline') ||
+                           errMsg.toLowerCase().includes('network') ||
+                           errMsg.toLowerCase().includes('reach') ||
+                           errMsg.toLowerCase().includes('connection') ||
+                           errMsg.toLowerCase().includes('failed') ||
+                           errMsg.toLowerCase().includes('unreachable');
+      if (isNetworkErr) {
+        setIsOffline(true);
+        const savedLogs = localStorage.getItem('guest_logs');
+        if (savedLogs) {
+          try {
+            setLogs(JSON.parse(savedLogs));
+          } catch (e) {}
+        }
+      }
       handleFirestoreError(error, OperationType.LIST, `users/${firebaseUser.uid}/logs`);
     });
 
@@ -2239,23 +2322,33 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center transition-colors duration-300">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse">Syncing profile...</p>
       </div>
     );
   }
 
   if (!user && !authLoading) {
     // This should ideally not happen with the guest logic, but as a fallback
-    return <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-    </div>;
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center transition-colors duration-300">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest animate-pulse">Setting up session...</p>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-50 pb-48 transition-colors duration-300">
+      {isOffline && (
+        <div className="bg-amber-500 dark:bg-amber-600 text-white text-xs font-bold py-2 px-4 shadow-sm text-center flex items-center justify-center gap-2 transition-all duration-300 sticky top-0 z-50">
+          <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          Offline Mode — Changes will sync when connection is restored
+        </div>
+      )}
       {/* Header */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-6 py-4 sticky top-0 z-30">
+      <header className={`bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-6 py-4 sticky z-30 transition-all duration-300 ${isOffline ? 'top-[36px]' : 'top-0'}`}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">

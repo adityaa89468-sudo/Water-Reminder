@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, GoogleAuthProvider as GoogleAuthProviderClass, signInWithCredential } from 'firebase/auth';
-import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, getDocs, getDocFromServer, Timestamp } from 'firebase/firestore';
+import { initializeFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, getDocs, getDocFromServer, Timestamp } from 'firebase/firestore';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { Capacitor } from '@capacitor/core';
@@ -9,7 +9,9 @@ import firebaseConfig from './firebase-applet-config.json';
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-962fa691-cf68-4506-aa57-bc0738e34b65');
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-962fa691-cf68-4506-aa57-bc0738e34b65');
 export const googleProvider = new GoogleAuthProvider();
 
 // FCM Functions
@@ -106,20 +108,6 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   return errInfo;
 }
 
-// Validate Connection to Firestore
-async function testConnection() {
-  try {
-    console.log("Testing Firestore connection to project:", firebaseConfig.projectId);
-    const testRef = doc(db, 'test', 'connection');
-    await getDocFromServer(testRef);
-    console.log("Firestore connection successful");
-  } catch (error) {
-    console.warn("Firestore connection test failed:", error instanceof Error ? error.message : String(error));
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your internet connection.");
-    }
-  }
-}
-testConnection();
+// Connection check is handled lazily from the app controllers as needed.
 
 export { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, getDocs, Timestamp };
