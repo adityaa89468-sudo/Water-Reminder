@@ -1,5 +1,5 @@
 {
-	"appId": "com.water.reminder.app",
+	"appId": "com.aditya_production_water_reminder.app",
 	"appName": "Water Reminder",
 	"webDir": "dist",
 	"server": {
@@ -7,7 +7,7 @@
 	},
 	"plugins": {
 		"AdMob": {
-			"androidAppId": "ca-app-pub-9364231981895017~9211342199"
+			"androidAppId": "ca-app-pub-9364231981895017~3624609338"
 		},
 		"FirebaseAuthentication": {
 			"skipNativeAuth": false,

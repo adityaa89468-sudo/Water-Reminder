@@ -1846,6 +1846,31 @@ function AppContent() {
       limit(50)
     );
 
+    const migrateGuestData = async (userUid: string) => {
+      const savedLogs = localStorage.getItem('guest_logs');
+      if (savedLogs) {
+        try {
+          const parsedLogs = JSON.parse(savedLogs);
+          if (Array.isArray(parsedLogs) && parsedLogs.length > 0) {
+            console.log('Migrating guest logs to Firestore:', parsedLogs.length);
+            for (const log of parsedLogs) {
+              const logDocRef = doc(collection(db, 'users', userUid, 'logs'));
+              await setDoc(logDocRef, {
+                user_id: userUid,
+                amount: log.amount,
+                timestamp: Timestamp.fromDate(new Date(log.timestamp))
+              });
+            }
+          }
+        } catch (e) {
+          console.error('Failed to migrate guest logs:', e);
+        } finally {
+          localStorage.removeItem('guest_logs');
+        }
+      }
+      localStorage.removeItem('guest_user');
+    };
+
     const unsubUser = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -1870,27 +1895,33 @@ function AppContent() {
           badges: data.badges || [],
           google_fit_sync: data.google_fit_sync ?? false
         });
+        
+        // Migrate legacy guest logs if there are any left
+        migrateGuestData(firebaseUser.uid);
       } else {
         // Initialize user in Firestore if they don't exist
+        const savedUser = localStorage.getItem('guest_user');
+        const savedUserData = savedUser ? JSON.parse(savedUser) : null;
+
         const newUser: UserData = {
           id: 0,
           firebase_uid: firebaseUser.uid,
           email: firebaseUser.email || '',
           google_id: '',
-          name: firebaseUser.displayName || '',
-          daily_goal: 2000,
-          weight: null,
-          gender: null,
-          wake_up_time: '07:00',
-          sleep_time: '22:00',
-          streak: 0,
-          notifications_enabled: true,
-          reminder_interval: 120,
-          notification_sound: 'default',
-          dark_mode: false,
-          level: 1,
-          total_liters: 0,
-          badges: [],
+          name: firebaseUser.displayName || savedUserData?.name || '',
+          daily_goal: savedUserData?.daily_goal || 2000,
+          weight: savedUserData?.weight || null,
+          gender: savedUserData?.gender || null,
+          wake_up_time: savedUserData?.wake_up_time || '07:00',
+          sleep_time: savedUserData?.sleep_time || '22:00',
+          streak: savedUserData?.streak || 0,
+          notifications_enabled: savedUserData?.notifications_enabled ?? true,
+          reminder_interval: savedUserData?.reminder_interval || 120,
+          notification_sound: savedUserData?.notification_sound || 'default',
+          dark_mode: savedUserData?.dark_mode ?? false,
+          level: savedUserData?.level || 1,
+          total_liters: savedUserData?.total_liters || 0,
+          badges: savedUserData?.badges || [],
           google_fit_sync: false
         };
         
@@ -1906,7 +1937,9 @@ function AppContent() {
         delete (dbUser as any).id;
         delete (dbUser as any).google_id;
 
-        setDoc(userRef, dbUser).catch(e => {
+        setDoc(userRef, dbUser).then(() => {
+          migrateGuestData(firebaseUser.uid);
+        }).catch(e => {
           setLoading(false);
           handleFirestoreError(e, OperationType.WRITE, `users/${firebaseUser.uid}`);
         });
