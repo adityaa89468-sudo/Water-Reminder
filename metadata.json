@@ -1,6 +1,6 @@
 {
-  "name": "Water Reminder",
-  "description": "Water Reminder is a smart hydration assistant designed to help you reach your daily water goals. Features include AI-driven hydration insights, a gamified level system, detailed progress analytics, and seamless data sync via Google. Perfect for tracking health milestones and maintaining a consistent hydration routine.",
+  "name": "SipLumo",
+  "description": "SipLumo is a production-ready, privacy-first water-drinking reminder and hydration tracking app for Android. Features transparent wellness-based hydration target calculations, smart customizable reminders, offline-first data persistence, optional Google Cloud sync, and Material Design 3 aesthetics.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
