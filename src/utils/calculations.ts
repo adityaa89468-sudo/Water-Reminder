@@ -6,7 +6,9 @@ import {
   BiologicalSex,
   ActivityLevel,
   Climate,
-  PregnancyStatus
+  PregnancyStatus,
+  DrinkType,
+  WaterLog
 } from '../types';
 
 export const REVIEW_DATE = 'August 2026';
@@ -102,6 +104,41 @@ export function getClimateSuggestion(climate: Climate): number {
     default:
       return 0;
   }
+}
+
+/**
+ * Automatically calculate the recommended daily water intake based on user weight, activity level, and climate
+ */
+export function calculateRecommendedIntake(
+  weightKg: number,
+  activityLevel: ActivityLevel,
+  climate: Climate
+): {
+  baseMl: number;
+  activityAdjustmentMl: number;
+  climateAdjustmentMl: number;
+  totalSuggestedMl: number;
+  recommendedRangeMinMl: number;
+  recommendedRangeMaxMl: number;
+} {
+  const baseRatePerKg = 30;
+  const rawBaseEstimate = weightKg * baseRatePerKg;
+  const baseMl = roundToNearest50(rawBaseEstimate);
+  const activityAdjustmentMl = getActivitySuggestion(activityLevel);
+  const climateAdjustmentMl = getClimateSuggestion(climate);
+
+  const totalSuggestedMl = Math.max(1000, baseMl + activityAdjustmentMl + climateAdjustmentMl);
+  const recommendedRangeMinMl = roundToNearest50(weightKg * 25 + activityAdjustmentMl + climateAdjustmentMl);
+  const recommendedRangeMaxMl = roundToNearest50(weightKg * 35 + activityAdjustmentMl + climateAdjustmentMl);
+
+  return {
+    baseMl,
+    activityAdjustmentMl,
+    climateAdjustmentMl,
+    totalSuggestedMl,
+    recommendedRangeMinMl,
+    recommendedRangeMaxMl
+  };
 }
 
 /**
@@ -223,3 +260,215 @@ export function getTargetSafetyWarning(targetMl: number): { isWarning: boolean; 
   }
   return { isWarning: false, message: '' };
 }
+
+/**
+ * Identify the user's most frequently consumed drink volume from log history
+ */
+export interface MostFrequentDrinkVolume {
+  amountMl: number;
+  count: number;
+  drinkType: DrinkType;
+  isFallback: boolean;
+}
+
+export function getMostFrequentDrinkVolume(
+  logs: WaterLog[] = [],
+  defaultMl = 250,
+  defaultDrinkType: DrinkType = 'water'
+): MostFrequentDrinkVolume {
+  if (!logs || logs.length === 0) {
+    return {
+      amountMl: defaultMl,
+      count: 0,
+      drinkType: defaultDrinkType,
+      isFallback: true
+    };
+  }
+
+  // Count occurrences of each volume
+  const frequencyMap = new Map<number, { count: number; drinkTypes: Record<string, number> }>();
+
+  for (const log of logs) {
+    if (!log.amount || log.amount <= 0) continue;
+    const entry = frequencyMap.get(log.amount) || { count: 0, drinkTypes: {} };
+    entry.count += 1;
+    const dt = log.drinkType || 'water';
+    entry.drinkTypes[dt] = (entry.drinkTypes[dt] || 0) + 1;
+    frequencyMap.set(log.amount, entry);
+  }
+
+  if (frequencyMap.size === 0) {
+    return {
+      amountMl: defaultMl,
+      count: 0,
+      drinkType: defaultDrinkType,
+      isFallback: true
+    };
+  }
+
+  let bestAmount = defaultMl;
+  let maxCount = -1;
+  let dominantDrinkType: DrinkType = defaultDrinkType;
+
+  // Determine highest frequency
+  for (const [amount, data] of frequencyMap.entries()) {
+    if (data.count > maxCount) {
+      maxCount = data.count;
+      bestAmount = amount;
+
+      let bestDt = defaultDrinkType;
+      let maxDtCount = -1;
+      for (const [dt, c] of Object.entries(data.drinkTypes)) {
+        if (c > maxDtCount) {
+          maxDtCount = c;
+          bestDt = dt as DrinkType;
+        }
+      }
+      dominantDrinkType = bestDt;
+    }
+  }
+
+  return {
+    amountMl: bestAmount,
+    count: maxCount,
+    drinkType: dominantDrinkType,
+    isFallback: false
+  };
+}
+
+/**
+ * Hydration Velocity & Intake Trend Types & Calculation
+ */
+export type HydrationTrendDirection = 'up' | 'down' | 'flat';
+
+export interface HydrationVelocityTrend {
+  direction: HydrationTrendDirection;
+  arrow: 'up' | 'down' | 'flat';
+  todayMlSoFar: number;
+  yesterdayMlAtSameTime: number;
+  yesterdayTotalMl: number;
+  differenceMl: number;
+  percentageChange: number;
+  todayVelocityMlPerHour: number;
+  yesterdayVelocityMlPerHour: number;
+  label: string;
+  statusBadge: string;
+  actionableFeedback: string;
+  comparisonDetails: string;
+}
+
+export function calculateHydrationVelocityTrend(
+  logs: WaterLog[] = [],
+  referenceDate: Date = new Date(),
+  unitSystem: UnitSystem = 'metric'
+): HydrationVelocityTrend {
+  const now = referenceDate;
+
+  // Local date helper YYYY-MM-DD
+  const formatLocalDate = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayDateStr = formatLocalDate(now);
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterdayDateStr = formatLocalDate(yesterday);
+
+  // Minutes elapsed from start of the day (00:00)
+  const currentMinutesFromMidnight = now.getHours() * 60 + now.getMinutes();
+
+  let todayMlSoFar = 0;
+  let yesterdayMlAtSameTime = 0;
+  let yesterdayTotalMl = 0;
+
+  for (const log of logs) {
+    if (!log.amount || log.amount <= 0) continue;
+    const logDate = new Date(log.timestamp);
+    const logDateStr = formatLocalDate(logDate);
+    const logMinutes = logDate.getHours() * 60 + logDate.getMinutes();
+
+    if (logDateStr === todayDateStr) {
+      if (logDate.getTime() <= now.getTime()) {
+        todayMlSoFar += log.amount;
+      }
+    } else if (logDateStr === yesterdayDateStr) {
+      yesterdayTotalMl += log.amount;
+      if (logMinutes <= currentMinutesFromMidnight) {
+        yesterdayMlAtSameTime += log.amount;
+      }
+    }
+  }
+
+  // Elapsed hours today (minimum 0.5h to avoid division by zero early in morning)
+  const elapsedHours = Math.max(0.5, currentMinutesFromMidnight / 60);
+  const todayVelocity = Math.round(todayMlSoFar / elapsedHours);
+  const yesterdayVelocity = Math.round(yesterdayMlAtSameTime / elapsedHours);
+
+  const differenceMl = todayMlSoFar - yesterdayMlAtSameTime;
+  const absDiff = Math.abs(differenceMl);
+
+  let direction: HydrationTrendDirection = 'flat';
+  // Consider flat if difference is within 50 mL or within 5% of yesterday's volume
+  const threshold = Math.max(50, Math.round(yesterdayMlAtSameTime * 0.05));
+
+  if (differenceMl > threshold) {
+    direction = 'up';
+  } else if (differenceMl < -threshold) {
+    direction = 'down';
+  } else {
+    direction = 'flat';
+  }
+
+  // Percentage change
+  let percentageChange = 0;
+  if (yesterdayMlAtSameTime > 0) {
+    percentageChange = Math.round((differenceMl / yesterdayMlAtSameTime) * 100);
+  } else if (todayMlSoFar > 0) {
+    percentageChange = 100;
+  }
+
+  // Actionable feedback and descriptive labels
+  const diffFormatted = formatVolumeExact(absDiff, unitSystem);
+  let label = 'On Pace';
+  let statusBadge = 'Matching yesterday';
+  let actionableFeedback = '';
+  let comparisonDetails = '';
+
+  if (direction === 'up') {
+    label = 'Pacing Ahead';
+    statusBadge = `+${diffFormatted} vs yesterday`;
+    comparisonDetails = `${todayVelocity} mL/h vs ${yesterdayVelocity} mL/h yesterday`;
+    actionableFeedback = `Great momentum! You are ${diffFormatted} ahead of yesterday's intake at this hour. Keep sipping steadily!`;
+  } else if (direction === 'down') {
+    label = 'Pacing Behind';
+    statusBadge = `-${diffFormatted} vs yesterday`;
+    comparisonDetails = `${todayVelocity} mL/h vs ${yesterdayVelocity} mL/h yesterday`;
+    actionableFeedback = `Intake velocity is ${diffFormatted} slower than yesterday at this hour. Drink a glass now to catch back up!`;
+  } else {
+    label = 'On Pace';
+    statusBadge = absDiff === 0 ? 'Equal to yesterday' : `±${diffFormatted} vs yesterday`;
+    comparisonDetails = `${todayVelocity} mL/h (matches yesterday's pace)`;
+    actionableFeedback = todayMlSoFar === 0
+      ? 'Start your day with a refreshing glass of water to kickstart your hydration velocity!'
+      : 'Steady hydration rhythm! Your intake velocity matches yesterday. Keep up this healthy cadence!';
+  }
+
+  return {
+    direction,
+    arrow: direction,
+    todayMlSoFar,
+    yesterdayMlAtSameTime,
+    yesterdayTotalMl,
+    differenceMl,
+    percentageChange,
+    todayVelocityMlPerHour: todayVelocity,
+    yesterdayVelocityMlPerHour: yesterdayVelocity,
+    label,
+    statusBadge,
+    actionableFeedback,
+    comparisonDetails
+  };
+}
+

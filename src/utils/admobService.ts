@@ -4,7 +4,8 @@ import {
   BannerAdPosition,
   BannerAdSize,
   BannerAdPluginEvents,
-  AdMobBannerSize
+  AdMobBannerSize,
+  AdmobConsentStatus
 } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
 
@@ -16,7 +17,7 @@ export const ADMOB_CONFIG = {
 let isInitialized = false;
 
 /**
- * Initializes the AdMob SDK on native Android/iOS
+ * Initializes the AdMob SDK on native Android/iOS with Google UMP Consent Support
  */
 export async function initAdMob(): Promise<boolean> {
   if (!Capacitor.isNativePlatform()) {
@@ -28,6 +29,20 @@ export async function initAdMob(): Promise<boolean> {
   }
 
   try {
+    // 1. Request Google UMP User Consent (EU/EEA & Play Store Policy Compliance)
+    try {
+      const consentInfo = await AdMob.requestConsentInfo();
+      if (
+        consentInfo.status === AdmobConsentStatus.REQUIRED &&
+        consentInfo.isConsentFormAvailable
+      ) {
+        await AdMob.showConsentForm();
+      }
+    } catch (consentErr) {
+      console.log('AdMob UMP consent check notice:', consentErr);
+    }
+
+    // 2. Initialize AdMob with official production ad parameters
     await AdMob.initialize({
       testingDevices: [],
       initializeForTesting: false // Real production ads
@@ -37,6 +52,20 @@ export async function initAdMob(): Promise<boolean> {
     return true;
   } catch (error) {
     console.warn('AdMob initialization error:', error);
+    return false;
+  }
+}
+
+/**
+ * Re-opens the Google Privacy Options Form if available (GDPR/EU requirement)
+ */
+export async function showAdPrivacyOptions(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    await AdMob.showPrivacyOptionsForm();
+    return true;
+  } catch (e) {
+    console.warn('Privacy options form notice:', e);
     return false;
   }
 }

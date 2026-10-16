@@ -29,6 +29,9 @@ import { TargetReachedCelebration } from './components/TargetReachedCelebration'
 import { LegalPages } from './components/LegalPages';
 import { SelfTestModal } from './components/SelfTestModal';
 import { AppTutorial } from './components/AppTutorial';
+import { Achievements } from './components/Achievements';
+import { MilestoneCelebrationModal } from './components/MilestoneCelebrationModal';
+import { calculateAchievements, UserAchievement } from './utils/achievements';
 
 export const App: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile>(loadUserProfile());
@@ -41,6 +44,8 @@ export const App: React.FC = () => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSelfTest, setShowSelfTest] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [showAchievementsModal, setShowAchievementsModal] = useState(false);
+  const [unlockedMilestoneToCelebrate, setUnlockedMilestoneToCelebrate] = useState<UserAchievement | null>(null);
   const [legalTab, setLegalTab] = useState<'privacy' | 'terms' | 'deletion' | 'health_disclosure' | null>(null);
 
   // Today's date string YYYY-MM-DD
@@ -82,6 +87,32 @@ export const App: React.FC = () => {
       saveUserProfile(updated);
     }
   }, [logs, profile.dailyTargetMl, profile.dayTargetOverrides]);
+
+  // Check and persist newly unlocked achievements
+  useEffect(() => {
+    if (!profile.onboardingCompleted) return;
+    const { achievements, newlyUnlockedIds } = calculateAchievements(profile, logs);
+    if (newlyUnlockedIds.length > 0) {
+      const nowIso = new Date().toISOString();
+      const updatedMap = { ...(profile.unlockedBadges || {}) };
+      newlyUnlockedIds.forEach(id => {
+        updatedMap[id] = nowIso;
+      });
+
+      const updatedProfile = {
+        ...profile,
+        unlockedBadges: updatedMap
+      };
+      setProfile(updatedProfile);
+      saveUserProfile(updatedProfile);
+
+      // Trigger celebration modal for the first newly unlocked milestone
+      const firstNewlyUnlocked = achievements.find(a => newlyUnlockedIds.includes(a.id));
+      if (firstNewlyUnlocked && profile.celebrationEnabled) {
+        setUnlockedMilestoneToCelebrate(firstNewlyUnlocked);
+      }
+    }
+  }, [profile.streak, profile.bestStreak, profile.totalDrankMl, logs.length, profile.onboardingCompleted]);
 
   // Update profile helper
   const handleUpdateProfile = useCallback((updatedProps: Partial<UserProfile>) => {
@@ -189,12 +220,14 @@ export const App: React.FC = () => {
               <Home
                 profile={profile}
                 todayLogs={todayLogs}
+                allLogs={logs}
                 todayTotalMl={todayTotalMl}
                 onAddWater={handleAddWater}
                 onUndoLastLog={handleUndoLastLog}
                 onOpenWhyTarget={() => setShowWhyTarget(true)}
                 onOpenReminders={() => setShowRemindersModal(true)}
                 onOpenHistory={() => setActiveTab('history')}
+                onOpenAchievements={() => setShowAchievementsModal(true)}
               />
             )}
 
@@ -215,6 +248,15 @@ export const App: React.FC = () => {
                 profile={profile}
                 unitSystem={profile.unitSystem}
                 onClearAllHistory={handleWipeAllData}
+                onOpenAchievements={() => setShowAchievementsModal(true)}
+              />
+            )}
+
+            {activeTab === 'achievements' && (
+              <Achievements
+                profile={profile}
+                logs={logs}
+                onBack={() => setActiveTab('home')}
               />
             )}
 
@@ -235,6 +277,7 @@ export const App: React.FC = () => {
                 onOpenLegal={tab => setLegalTab(tab)}
                 onOpenSelfTest={() => setShowSelfTest(true)}
                 onResetApp={handleWipeAllData}
+                onOpenAchievements={() => setShowAchievementsModal(true)}
               />
             )}
           </>
@@ -291,6 +334,32 @@ export const App: React.FC = () => {
       {/* Automated Self Test Modal */}
       {showSelfTest && (
         <SelfTestModal onClose={() => setShowSelfTest(false)} />
+      )}
+
+      {/* Achievements & Virtual Medals Modal */}
+      {showAchievementsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="w-full max-w-md my-auto">
+            <Achievements
+              profile={profile}
+              logs={logs}
+              onBack={() => setShowAchievementsModal(false)}
+              isModal
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Streak Milestone Celebration Modal */}
+      {unlockedMilestoneToCelebrate && (
+        <MilestoneCelebrationModal
+          achievement={unlockedMilestoneToCelebrate}
+          onDismiss={() => setUnlockedMilestoneToCelebrate(null)}
+          onViewAllBadges={() => {
+            setUnlockedMilestoneToCelebrate(null);
+            setShowAchievementsModal(true);
+          }}
+        />
       )}
 
     </div>

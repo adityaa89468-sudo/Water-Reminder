@@ -209,9 +209,13 @@ export function updateWaterLog(
 }
 
 export function clearAllLocalData(): void {
-  localStorage.removeItem(PROFILE_KEY);
-  localStorage.removeItem(LOGS_KEY);
-  localStorage.removeItem(SYNC_QUEUE_KEY);
+  try {
+    localStorage.removeItem(PROFILE_KEY);
+    localStorage.removeItem(LOGS_KEY);
+    localStorage.removeItem(SYNC_QUEUE_KEY);
+  } catch (err) {
+    console.warn('Failed to clear localStorage data:', err);
+  }
 }
 
 // Aliases for seamless imports
@@ -329,20 +333,65 @@ export function exportDataAsJSON(profile: UserProfile, logs: WaterLog[]): string
 }
 
 export function exportDataAsCSV(logs: WaterLog[]): string {
-  const headers = ['ID', 'Date', 'Time', 'Amount (mL)', 'Drink Type', 'Note'];
-  const rows = logs.map(l => {
-    const dateObj = new Date(l.timestamp);
-    const dateStr = dateObj.toLocaleDateString();
-    const timeStr = dateObj.toLocaleTimeString();
+  const headers = [
+    'Log ID',
+    'Timestamp (ISO)',
+    'Date (YYYY-MM-DD)',
+    'Time',
+    'Amount (mL)',
+    'Amount (fl oz)',
+    'Beverage Type',
+    'Notes'
+  ];
+
+  // Sort chronologically from earliest to latest for standard medical/health records
+  const sorted = [...logs].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
+  const rows = sorted.map(l => {
+    const d = new Date(l.timestamp);
+    const dateIso = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : '';
+    const timeStr = !isNaN(d.getTime())
+      ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      : '';
+    const flOz = (l.amount / 29.5735).toFixed(1);
+    const noteClean = (l.note || '').replace(/"/g, '""');
+
     return [
       `"${l.id}"`,
-      `"${dateStr}"`,
+      `"${l.timestamp}"`,
+      `"${dateIso}"`,
       `"${timeStr}"`,
       l.amount,
-      `"${l.drinkType}"`,
-      `"${(l.note || '').replace(/"/g, '""')}"`
+      flOz,
+      `"${l.drinkType || 'water'}"`,
+      `"${noteClean}"`
     ].join(',');
   });
 
-  return [headers.join(','), ...rows].join('\n');
+  return [headers.join(','), ...rows].join('\r\n');
 }
+
+/**
+ * Triggers a direct download of the hydration logs as a CSV file to the user's device
+ */
+export function downloadLogsAsCSV(logs: WaterLog[], filenamePrefix = 'siplumo_hydration_logs'): boolean {
+  if (!logs || logs.length === 0) {
+    return false;
+  }
+  const csvContent = exportDataAsCSV(logs);
+  // Prepend UTF-8 Byte Order Mark (\uFEFF) to guarantee correct rendering in Microsoft Excel & Apple Numbers
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = `${filenamePrefix}_${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return true;
+}
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   User,
   Bell,
@@ -23,14 +23,34 @@ import {
   LogOut,
   RefreshCw,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Trophy,
+  Award,
+  FileSpreadsheet,
+  Download,
+  Calculator,
+  Activity,
+  Thermometer,
+  CloudSnow,
+  Droplets,
+  Flame,
+  Minus
 } from 'lucide-react';
-import { UserProfile, UnitSystem, GlassPreset, WaterLog } from '../types';
-import { kgToLb, lbToKg, formatVolumeExact, flOzToMl, mlToFlOz } from '../utils/calculations';
+import { UserProfile, UnitSystem, GlassPreset, WaterLog, ActivityLevel, Climate } from '../types';
+import {
+  kgToLb,
+  lbToKg,
+  formatVolume,
+  formatVolumeExact,
+  flOzToMl,
+  mlToFlOz,
+  calculateRecommendedIntake
+} from '../utils/calculations';
 import { translations } from '../i18n/translations';
 import { useAuth } from './AuthProvider';
 import { loginWithGoogle, logout } from '../firebase';
 import { syncProgressToFirestore, restoreProgressFromFirestore } from '../utils/cloudSync';
+import { downloadLogsAsCSV } from '../utils/storage';
 import { BannerAd } from './BannerAd';
 import { ADMOB_CONFIG } from '../utils/admobService';
 
@@ -45,6 +65,7 @@ interface SettingsViewProps {
   onOpenLegal: (tab: 'privacy' | 'terms' | 'deletion' | 'health_disclosure') => void;
   onOpenSelfTest: () => void;
   onResetApp: () => void;
+  onOpenAchievements?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -57,7 +78,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onOpenTutorial,
   onOpenLegal,
   onOpenSelfTest,
-  onResetApp
+  onResetApp,
+  onOpenAchievements
 }) => {
   const { user, loading: authLoading } = useAuth();
   const t = translations[profile.language || 'en'];
@@ -70,6 +92,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const [editingPresets, setEditingPresets] = useState(false);
   const [presetList, setPresetList] = useState<GlassPreset[]>(profile.presets);
+
+  // Recommended Daily Water Intake Calculator state
+  const [calcWeightKg, setCalcWeightKg] = useState<number>(profile.weightKg || 70);
+  const [calcActivity, setCalcActivity] = useState<ActivityLevel>(profile.activityLevel || 'moderate');
+  const [calcClimate, setCalcClimate] = useState<Climate>(
+    profile.climate === 'hot' || profile.climate === 'cool' ? profile.climate : 'normal'
+  );
+  const [calcFeedback, setCalcFeedback] = useState<string | null>(null);
+
+  // Keep calculator in sync if profile changes
+  useEffect(() => {
+    if (profile.weightKg) {
+      setCalcWeightKg(profile.weightKg);
+    }
+  }, [profile.weightKg]);
+
+  // Compute live recommendation
+  const recommendation = useMemo(() => {
+    return calculateRecommendedIntake(calcWeightKg, calcActivity, calcClimate);
+  }, [calcWeightKg, calcActivity, calcClimate]);
+
+  const handleApplyRecommendedTarget = () => {
+    onUpdateProfile({
+      weightKg: calcWeightKg,
+      activityLevel: calcActivity,
+      climate: calcClimate,
+      dailyTargetMl: recommendation.totalSuggestedMl,
+      recommendedBaseMl: recommendation.totalSuggestedMl,
+      customTargetSet: false
+    });
+
+    const displayVol = formatVolumeExact(recommendation.totalSuggestedMl, profile.unitSystem);
+    const climateName = calcClimate === 'cool' ? 'cold' : calcClimate === 'normal' ? 'temperate' : 'hot';
+    setCalcFeedback(`Daily goal updated to ${displayVol} based on your weight (${Math.round(calcWeightKg)} kg), ${calcActivity} activity, and ${climateName} climate!`);
+    setTimeout(() => {
+      setCalcFeedback(null);
+    }, 4500);
+  };
 
   // Auth & Cloud Sync States
   const [authActionLoading, setAuthActionLoading] = useState(false);
@@ -182,6 +242,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     onUpdateProfile({ presets: updated });
   };
 
+  const [csvDownloadFeedback, setCsvDownloadFeedback] = useState<string | null>(null);
+
+  const handleExportLogsCSV = () => {
+    if (logs.length === 0) {
+      setCsvDownloadFeedback('No hydration records logged yet to export.');
+      setTimeout(() => setCsvDownloadFeedback(null), 4000);
+      return;
+    }
+    const success = downloadLogsAsCSV(logs);
+    if (success) {
+      setCsvDownloadFeedback(`Successfully exported ${logs.length} logs as CSV to your device!`);
+      setTimeout(() => setCsvDownloadFeedback(null), 4000);
+    }
+  };
+
   return (
     <div className="space-y-4 pb-12 animate-in fade-in">
       
@@ -245,6 +320,283 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
+      {/* Recommended Daily Water Intake Auto-Calculator Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
+              <Calculator className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  Daily Intake Auto-Calculator
+                </h3>
+                <span className="px-1.5 py-0.2 rounded-md bg-sky-100 dark:bg-sky-950 text-[10px] font-bold text-sky-700 dark:text-sky-300">
+                  Auto-Calculate
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Personalized water goal based on weight, activity &amp; climate
+              </p>
+            </div>
+          </div>
+
+          <div className="text-right">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+              Current Goal
+            </span>
+            <span className="text-xs font-extrabold text-slate-900 dark:text-white tabular-nums">
+              {formatVolumeExact(profile.dailyTargetMl, profile.unitSystem)}
+            </span>
+          </div>
+        </div>
+
+        {/* Feedback message */}
+        {calcFeedback && (
+          <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold flex items-center gap-2 shadow-sm animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{calcFeedback}</span>
+          </div>
+        )}
+
+        {/* Input 1: User Body Weight */}
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scale className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+              <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                1. Body Weight
+              </label>
+            </div>
+            <span className="text-[11px] text-slate-400">
+              Rule: 30 mL/kg ({formatVolume(recommendation.baseMl, profile.unitSystem)} base)
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 pt-1">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCalcWeightKg(prev => Math.max(30, prev - (profile.unitSystem === 'imperial' ? Math.round(lbToKg(5)) : 2)))}
+                className="w-8 h-8 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-slate-600 tap-active"
+                title="Decrease weight"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+
+              <div className="flex items-baseline gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 shadow-2xs">
+                <input
+                  type="number"
+                  min="30"
+                  max="250"
+                  value={profile.unitSystem === 'imperial' ? kgToLb(calcWeightKg) : Math.round(calcWeightKg)}
+                  onChange={e => {
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val) && val > 0) {
+                      setCalcWeightKg(profile.unitSystem === 'imperial' ? lbToKg(val) : val);
+                    }
+                  }}
+                  className="w-16 font-black text-slate-900 dark:text-white text-base text-center bg-transparent focus:outline-none"
+                />
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  {profile.unitSystem === 'imperial' ? 'lb' : 'kg'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCalcWeightKg(prev => Math.min(250, prev + (profile.unitSystem === 'imperial' ? Math.round(lbToKg(5)) : 2)))}
+                className="w-8 h-8 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-slate-600 tap-active"
+                title="Increase weight"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium text-right">
+              {profile.unitSystem === 'imperial'
+                ? `≈ ${Math.round(calcWeightKg)} kg`
+                : `≈ ${kgToLb(calcWeightKg)} lb`}
+            </span>
+          </div>
+        </div>
+
+        {/* Input 2: Activity Level */}
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                2. Daily Activity Level
+              </label>
+            </div>
+            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+              +{formatVolume(recommendation.activityAdjustmentMl, profile.unitSystem)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { id: 'low' as const, label: 'Low', desc: 'Sedentary', bonus: '+0 mL' },
+              { id: 'moderate' as const, label: 'Moderate', desc: '30-60m walk/gym', bonus: '+250 mL' },
+              { id: 'high' as const, label: 'High', desc: 'Intense sports', bonus: '+500 mL' }
+            ].map(act => {
+              const isSelected = calcActivity === act.id;
+              return (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => setCalcActivity(act.id)}
+                  className={`p-2.5 rounded-xl border text-left transition-all tap-active flex flex-col justify-between ${
+                    isSelected
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-500 text-emerald-900 dark:text-emerald-200 shadow-xs ring-1 ring-emerald-500/30'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold leading-none">{act.label}</span>
+                    {isSelected && <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />}
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight block mb-1">
+                    {act.desc}
+                  </span>
+                  <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-400">
+                    {profile.unitSystem === 'imperial'
+                      ? act.id === 'low' ? '+0 oz' : act.id === 'moderate' ? '+8.5 oz' : '+17 oz'
+                      : act.bonus}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Input 3: Local Climate (Hot / Cold / Temperate) */}
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Thermometer className="w-4 h-4 text-amber-500" />
+              <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                3. Local Climate
+              </label>
+            </div>
+            <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold">
+              +{formatVolume(recommendation.climateAdjustmentMl, profile.unitSystem)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              {
+                id: 'cool' as const,
+                label: 'Cold',
+                desc: 'Winter / Chilly',
+                bonus: '+0 mL',
+                icon: CloudSnow,
+                color: 'text-sky-600'
+              },
+              {
+                id: 'normal' as const,
+                label: 'Temperate',
+                desc: 'Mild 18–24°C',
+                bonus: '+0 mL',
+                icon: Thermometer,
+                color: 'text-teal-600'
+              },
+              {
+                id: 'hot' as const,
+                label: 'Hot',
+                desc: 'Warm / Humid',
+                bonus: '+350 mL',
+                icon: Sun,
+                color: 'text-amber-500'
+              }
+            ].map(clim => {
+              const isSelected = calcClimate === clim.id;
+              const Icon = clim.icon;
+              return (
+                <button
+                  key={clim.id}
+                  type="button"
+                  onClick={() => setCalcClimate(clim.id)}
+                  className={`p-2.5 rounded-xl border text-left transition-all tap-active flex flex-col justify-between ${
+                    isSelected
+                      ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 dark:border-amber-500 text-amber-950 dark:text-amber-200 shadow-xs ring-1 ring-amber-500/30'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <Icon className={`w-3.5 h-3.5 ${clim.color}`} />
+                      <span className="text-xs font-bold leading-none">{clim.label}</span>
+                    </div>
+                    {isSelected && <Check className="w-3 h-3 text-amber-600 dark:text-amber-400" />}
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight block mb-1">
+                    {clim.desc}
+                  </span>
+                  <span className="text-[9px] font-black uppercase text-amber-700 dark:text-amber-400">
+                    {profile.unitSystem === 'imperial'
+                      ? clim.id === 'hot' ? '+12 fl oz' : '+0 fl oz'
+                      : clim.bonus}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Live Calculation Result Summary Card */}
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-teal-500/10 border border-sky-200 dark:border-sky-800 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-700 dark:text-sky-300 block">
+                Calculated Recommended Intake
+              </span>
+              <div className="flex items-baseline gap-2 mt-0.5">
+                <span className="text-2xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                  {formatVolumeExact(recommendation.totalSuggestedMl, profile.unitSystem)}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                  / day
+                </span>
+              </div>
+            </div>
+
+            <div className="text-right text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="block font-semibold">Healthy Range:</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">
+                {formatVolume(recommendation.recommendedRangeMinMl, profile.unitSystem)} – {formatVolume(recommendation.recommendedRangeMaxMl, profile.unitSystem)}
+              </span>
+            </div>
+          </div>
+
+          {/* Formula calculation trace */}
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-400 flex-wrap pt-1 border-t border-sky-200/50 dark:border-sky-800/50">
+            <span>Formula:</span>
+            <span className="font-bold">{formatVolume(recommendation.baseMl, profile.unitSystem)} (base)</span>
+            <span>+</span>
+            <span className="font-bold">{formatVolume(recommendation.activityAdjustmentMl, profile.unitSystem)} ({calcActivity})</span>
+            <span>+</span>
+            <span className="font-bold">{formatVolume(recommendation.climateAdjustmentMl, profile.unitSystem)} ({calcClimate === 'cool' ? 'cold' : calcClimate === 'normal' ? 'temperate' : 'hot'})</span>
+          </div>
+
+          {/* CTA: Apply Recommended Target */}
+          <button
+            type="button"
+            onClick={handleApplyRecommendedTarget}
+            className="w-full py-3 px-4 bg-gradient-to-r from-sky-600 via-indigo-600 to-teal-600 hover:from-sky-700 hover:via-indigo-700 hover:to-teal-700 active:scale-[0.98] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow-md flex items-center justify-center gap-2 transition-all tap-active"
+          >
+            <Check className="w-4 h-4 stroke-[3px]" />
+            <span>Apply Recommended Target: {formatVolumeExact(recommendation.totalSuggestedMl, profile.unitSystem)}</span>
+          </button>
+        </div>
+
+      </div>
+
       {/* Reminders & Notifications Quick Link */}
       <button
         onClick={onOpenReminders}
@@ -291,6 +643,32 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
         <ChevronRight className="w-5 h-5 text-slate-400" />
       </button>
+
+      {/* Achievements & Streak Badges Showcase Link */}
+      {onOpenAchievements && (
+        <button
+          onClick={onOpenAchievements}
+          className="w-full bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-yellow-500/10 border border-amber-200/80 dark:border-amber-800/80 rounded-3xl p-4 shadow-xs flex items-center justify-between hover:bg-amber-100/40 dark:hover:bg-amber-950/40 transition-colors text-left tap-active"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 text-white flex items-center justify-center shadow-xs">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span>Achievements & Badges</span>
+                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-amber-500 text-white uppercase tracking-wider">
+                  Medals
+                </span>
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                View your unlocked streak milestones & badges
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-slate-400" />
+        </button>
+      )}
 
       {/* Preferences Section */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3">
@@ -623,6 +1001,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Personal Health Records & CSV Export Card */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <FileSpreadsheet className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Health Records & CSV Export
+              </h3>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                {logs.length > 0 ? `${logs.length} intake entries recorded` : 'No logs recorded yet'}
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+            .CSV
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          Export your complete hydration history directly to your device as a CSV spreadsheet for doctor consultations, dietitian reviews, or personal health tracking in Microsoft Excel, Numbers, and Google Sheets.
+        </p>
+
+        {csvDownloadFeedback && (
+          <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span>{csvDownloadFeedback}</span>
+          </div>
+        )}
+
+        <button
+          onClick={handleExportLogsCSV}
+          disabled={logs.length === 0}
+          className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-xs flex items-center justify-center gap-2 transition-all tap-active disabled:opacity-50"
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          <span>{logs.length > 0 ? `Export ${logs.length} Hydration Logs (.CSV)` : 'Export Hydration Logs (.CSV)'}</span>
+        </button>
       </div>
 
       {/* Auto-Resizing Banner Ad */}

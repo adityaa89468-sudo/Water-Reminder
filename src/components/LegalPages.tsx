@@ -8,9 +8,11 @@ import {
   ChevronLeft,
   AlertCircle,
   CheckCircle2,
-  Database
+  Database,
+  Sliders
 } from 'lucide-react';
 import { REVIEW_DATE } from '../utils/calculations';
+import { showAdPrivacyOptions } from '../utils/admobService';
 
 interface LegalPagesProps {
   initialTab?: 'privacy' | 'terms' | 'deletion' | 'health_disclosure';
@@ -82,48 +84,113 @@ export const LegalPages: React.FC<LegalPagesProps> = ({
         {/* PRIVACY POLICY */}
         {activeTab === 'privacy' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
-              SipLumo Privacy Policy
-            </h2>
-            <p className="text-slate-500">Effective Date: August 30, 2026</p>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">
+                  SipLumo Privacy Policy
+                </h2>
+                <p className="text-slate-500 text-[11px]">Effective Date: September 2, 2026 &bull; Package: com.aditya_production_water_reminder.app</p>
+              </div>
+              <a
+                href="/privacy-policy"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+              >
+                <span>Full Web Policy</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
 
             <div className="space-y-3">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                1. Offline-First Architecture & Data Ownership
+                1. Offline-First Architecture & Privacy by Design
               </h3>
               <p>
-                SipLumo is built as an <strong>offline-first wellness tracking application</strong>. By default, all your personal parameters (body weight, age range, schedule, and fluid intake logs) are stored strictly on your local device storage. We do not sell, rent, monetize, or transmit your personal hydration logs to third-party ad brokers.
+                SipLumo is architected as an <strong>offline-first wellness application</strong>. By default, all your personal metrics (body weight, height, age range, biological sex, wake/bed schedules, quiet hours, and fluid intake logs) remain stored strictly on your local device. We do not sell, rent, monetize, or transmit your hydration logs to third-party data brokers.
               </p>
 
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                2. Information We Collect and Why
+                2. Information We Collect and Purpose
               </h3>
               <ul className="list-disc list-inside space-y-1.5 pl-1">
-                <li><strong>Body Weight:</strong> Utilized strictly on-device to compute the baseline standard wellness estimate (~30 mL/kg).</li>
-                <li><strong>Biological Sex & Age Range:</strong> Collected to present recognized contextual intake benchmarks published by the European Food Safety Authority (EFSA) and WHO.</li>
-                <li><strong>Sleep/Wake Schedule:</strong> Used locally by the Android notification engine to pause alerts during bedtime and quiet hours.</li>
-                <li><strong>Intake Logs:</strong> Stored locally to render progress charts and daily streak records.</li>
+                <li><strong>Body Weight & Height:</strong> Used strictly on-device to compute the baseline standard wellness estimate (~30 mL/kg reference calculation) based on European Food Safety Authority (EFSA) references.</li>
+                <li><strong>Biological Sex & Age Range:</strong> Collected solely to present recognized contextual intake benchmarks published by EFSA and WHO.</li>
+                <li><strong>Sleep/Wake Schedule:</strong> Used locally by the device notification scheduler to pause alerts during your bedtime and quiet hours.</li>
+                <li><strong>Lifestyle & Environment (Activity, Climate, Pregnancy):</strong> Adjusts hydration baseline estimates according to heat, exercise intensity, or lactation needs.</li>
+                <li><strong>Intake Logs & Beverage Types:</strong> Stored locally to render progress charts, calculate hydration index percentages, and track streaks.</li>
               </ul>
 
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                3. Optional Firebase Cloud Sync
+                3. Android Device Permissions
+              </h3>
+              <ul className="list-disc list-inside space-y-1 pl-1 text-[11.5px]">
+                <li><code>POST_NOTIFICATIONS</code>: Required on Android 13+ to send scheduled reminders.</li>
+                <li><code>RECEIVE_BOOT_COMPLETED</code>: Re-registers your local reminder schedules when your device reboots.</li>
+                <li><code>WAKE_LOCK</code>: Briefly awakens the notification alarm service at your designated reminder times.</li>
+                <li><code>AD_ID</code> &amp; <code>INTERNET</code>: Used by Google AdMob to deliver banner ads and prevent ad fraud.</li>
+              </ul>
+
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                4. Third-Party Services & Google AdMob
               </h3>
               <p>
-                If you optionally choose to sign in via Google Authentication, your hydration records are backed up securely to Firebase Firestore under your private authenticated user identifier (UID). You may disconnect cloud sync or permanently delete your cloud account at any moment via the Account Deletion portal.
+                To keep SipLumo completely free without subscription paywalls, we display non-intrusive banner advertisements via the <strong>Google Mobile Ads SDK (AdMob)</strong>.
+              </p>
+              <ul className="list-disc list-inside space-y-1 pl-1 text-[11.5px]">
+                <li><strong>Advertising ID (AAID):</strong> Google AdMob processes your device's Android Advertising ID for ad delivery, measurement, frequency capping, and click fraud protection.</li>
+                <li><strong>European Economic Area & UK Consent (UMP):</strong> In compliance with GDPR and Google policy, we implement the Google User Messaging Platform (UMP) consent dialog.</li>
+              </ul>
+
+              {/* UMP Re-Consent Button */}
+              <div className="p-3 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-900 rounded-2xl flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white text-xs">Ad Privacy & Consent Settings</p>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">Review or update your personalized ad consent choices (EEA/UK/GDPR).</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    showAdPrivacyOptions();
+                  }}
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-[11px] rounded-xl flex items-center gap-1.5 shrink-0 transition-colors shadow-xs"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Update Consent</span>
+                </button>
+              </div>
+
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                5. Optional Firebase Cloud Backup
+              </h3>
+              <p>
+                If you choose to sign in via Google Authentication, your hydration records are backed up securely to Firebase Firestore under your private authenticated user identifier (UID). All data in transit is encrypted via TLS 1.3 / HTTPS. You may disconnect or permanently delete your cloud account at any moment.
               </p>
 
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                4. Third-Party Analytics & Advertising
+                6. Data Deletion & Google Play Compliance
               </h3>
               <p>
-                SipLumo contains <strong>ZERO third-party advertisement networks</strong>, no tracking cookies, and no data broker integrations.
+                You retain full ownership of your data. You can delete your records at any time:
+              </p>
+              <ul className="list-disc list-inside space-y-1 pl-1 text-[11.5px]">
+                <li><strong>In-App Deletion:</strong> Tap the <em>Account &amp; Data Deletion</em> tab above or in Settings to instantly wipe all local device storage and cloud records.</li>
+                <li><strong>Public Web Deletion Portal:</strong> Accessible without having the app installed at <a href="/delete-account" className="font-mono text-sky-600 dark:text-sky-400 font-semibold underline">/delete-account</a>.</li>
+              </ul>
+
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                7. Health & Medical Policy Disclaimer
+              </h3>
+              <p>
+                <strong>SipLumo is NOT a medical device.</strong> All targets and estimates are general wellness guidelines for healthy individuals. If you have chronic kidney disease, heart failure, liver disease, or take diuretics, always follow the fluid intake advice prescribed by your doctor.
               </p>
 
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                5. Contact & Data Protection Officer
+                8. Contact & Developer Support
               </h3>
               <p>
-                For privacy questions or data deletion requests, contact us at: <span className="font-mono text-sky-600">privacy@siplumo.app</span>
+                For questions regarding this policy or data rights requests: <br />
+                <span className="font-mono text-sky-600 dark:text-sky-400 font-semibold">adityaa89468@gmail.com</span> &bull; <span className="font-mono text-sky-600 dark:text-sky-400">privacy@siplumo.app</span>
               </p>
             </div>
           </div>
@@ -238,6 +305,14 @@ export const LegalPages: React.FC<LegalPagesProps> = ({
                 <p className="text-rose-800 dark:text-rose-300 text-[11px]">
                   Pressing the button below will immediately wipe all your local device logs, streaks, notification timers, and profile configuration.
                 </p>
+
+                <div className="p-3 bg-white/70 dark:bg-slate-900/70 rounded-xl border border-rose-200 dark:border-rose-900/60 text-[11px] text-slate-600 dark:text-slate-400">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 block mb-1">
+                    Web-Based Deletion Option:
+                  </span>
+                  If you have uninstalled the app or need remote data deletion, submit a request anytime at: <br />
+                  <span className="font-mono text-sky-600 dark:text-sky-400 font-semibold">/delete-account</span>
+                </div>
 
                 {!confirmDelete ? (
                   <button

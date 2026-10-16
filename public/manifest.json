@@ -1,0 +1,20 @@
+{
+  "name": "SipLumo",
+  "short_name": "SipLumo",
+  "id": "/",
+  "description": "SipLumo is a production-ready, privacy-first water-drinking reminder and hydration tracking app.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

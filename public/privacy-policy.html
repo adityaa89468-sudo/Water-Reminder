@@ -3,91 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - Water Reminder</title>
+    <title>Privacy Policy - SipLumo (Water Reminder)</title>
     <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --slate-100: #f1f5f9;
+            --slate-50: #f8fafc;
+            --border: #e2e8f0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #334155;
-            max-width: 800px;
+            line-height: 1.65;
+            color: var(--slate-700);
+            max-width: 860px;
             margin: 0 auto;
             padding: 40px 20px;
-            background-color: #f8fafc;
+            background-color: var(--slate-50);
         }
         .container {
-            background: white;
-            padding: 40px;
+            background: #ffffff;
+            padding: 44px;
             border-radius: 24px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+            border: 1px solid var(--border);
+        }
+        .badge {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: var(--primary-dark);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
         }
         h1 {
-            color: #0f172a;
+            color: var(--slate-900);
             margin-top: 0;
-            font-size: 2rem;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
         }
+        .meta-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 12px 16px;
+            background: var(--slate-50);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: var(--slate-600);
+            margin: 20px 0 28px 0;
+            border: 1px solid var(--border);
+        }
+        .meta-info span { display: inline-flex; align-items: center; gap: 6px; }
+        .meta-info strong { color: var(--slate-900); }
         h2 {
-            color: #1e293b;
-            margin-top: 30px;
-            font-size: 1.5rem;
-            border-left: 4px solid #3b82f6;
-            padding-left: 15px;
+            color: var(--slate-900);
+            margin-top: 36px;
+            font-size: 1.35rem;
+            font-weight: 750;
+            border-left: 4px solid var(--primary);
+            padding-left: 14px;
+            letter-spacing: -0.01em;
+        }
+        h3 {
+            color: var(--slate-800);
+            margin-top: 22px;
+            font-size: 1.05rem;
+            font-weight: 700;
         }
         p { margin-bottom: 16px; }
-        ul { margin-bottom: 16px; padding-left: 20px; }
+        ul, ol { margin-bottom: 16px; padding-left: 22px; }
         li { margin-bottom: 8px; }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 18px 0;
             font-size: 0.875rem;
-            color: #94a3b8;
         }
-        .highlight { color: #3b82f6; font-weight: 600; }
+        th, td {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        th {
+            background-color: var(--slate-100);
+            color: var(--slate-900);
+            font-weight: 600;
+        }
+        .notice-box {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: #166534;
+        }
+        .warning-box {
+            background-color: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: #92400e;
+        }
+        .highlight { color: var(--primary); font-weight: 600; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .footer {
+            margin-top: 44px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--slate-600);
+            border-top: 1px solid var(--border);
+            padding-top: 24px;
+        }
+        @media (max-width: 640px) {
+            body { padding: 16px 12px; }
+            .container { padding: 24px 18px; border-radius: 16px; }
+            h1 { font-size: 1.7rem; }
+            h2 { font-size: 1.2rem; }
+            table { display: block; overflow-x: auto; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <span class="badge">Official Google Play Privacy Policy</span>
         <h1>Privacy Policy</h1>
-        <p><strong>Last updated: April 28, 2026</strong></p>
         
-        <p>At <span class="highlight">Water Reminder</span>, we are committed to protecting your privacy and providing a transparent experience. This policy explains how we handle your data and your rights as a user.</p>
+        <div class="meta-info">
+            <span><strong>Application:</strong> SipLumo - Water Reminder</span>
+            <span><strong>Package Name:</strong> com.aditya_production_water_reminder.app</span>
+            <span><strong>Effective Date:</strong> September 2, 2026</span>
+        </div>
+        
+        <p>At <span class="highlight">SipLumo - Water Reminder</span> ("we", "our", or "the App"), built and maintained by Aditya, we value your trust and are committed to protecting your privacy. This Privacy Policy details the exact types of information we collect, how that information is utilized, stored, and shared, and the rights you retain over your data, in full adherence to the <strong>Google Play Developer Program Policies</strong>, the <strong>General Data Protection Regulation (GDPR)</strong>, the <strong>California Consumer Privacy Act (CCPA)</strong>, and applicable international privacy laws.</p>
 
-        <h2>1. Information We Collect</h2>
-        <p>We collect information to provide personalized hydration tracking:</p>
+        <div class="notice-box">
+            <strong>Key Summary:</strong> SipLumo is architected as an <strong>offline-first</strong> utility. By default, all your hydration logs, daily targets, and schedule settings are stored locally on your device. We do not sell or broker your personal information. Optional cloud backup is provided via Google Firebase, and banner advertising is served via Google AdMob in accordance with user consent.
+        </div>
+
+        <h2>1. Information We Collect and Process</h2>
+        <p>We only collect data that is strictly necessary to calculate personalized wellness hydration recommendations, send timely hydration reminders, and sustain our free service.</p>
+
+        <h3>A. Information You Provide Directly</h3>
         <ul>
-            <li><strong>Profile Data:</strong> Name, email address, physical metrics (weight, gender) provided by you.</li>
-            <li><strong>Hydration Data:</strong> Water intake logs, timestamps, and streak history.</li>
-            <li><strong>Device Identifiers:</strong> We use Google AdMob which may collect device identifiers (e.g., Android Advertising ID) and usage statistics.</li>
+            <li><strong>Physical & Wellness Parameters:</strong> Body weight, height, approximate age bracket, and biological sex. These metrics are used strictly to calculate your baseline fluid intake guidelines (~30 mL/kg reference calculation) based on standard European Food Safety Authority (EFSA) references.</li>
+            <li><strong>Daily Routine & Schedule:</strong> Wake-up time, bedtime, and quiet hours. These are used locally by the app's notification scheduler to ensure you are never disturbed while sleeping.</li>
+            <li><strong>Environmental & Lifestyle Context:</strong> Activity level (low, moderate, high), climate conditions (cool, normal, hot), and optional flags for pregnancy or breastfeeding. These provide contextual adjustments to baseline fluid targets.</li>
+            <li><strong>Hydration Intake Logs:</strong> Timestamps of fluid consumption, volume (in mL or oz), beverage categories (water, infused water, tea, electrolytes, mineral water, etc.), and optional user notes.</li>
+            <li><strong>Special Health Considerations (Self-Reported):</strong> Indications of fluid restrictions or kidney, heart, or liver conditions, used solely to display prominent advisory banners prompting adherence to physician-prescribed limits.</li>
         </ul>
 
-        <h2>2. Third-Party Services</h2>
-        <p>To provide a free, feature-rich experience, we use trusted third-party providers:</p>
+        <h3>B. Information Collected Automatically (AdMob & Diagnostics)</h3>
         <ul>
-            <li><strong>Google AdMob:</strong> For displaying advertisements. AdMob uses identifiers to show personalized ads. <a href="https://policies.google.com/privacy">View Google's Privacy Policy</a>.</li>
-            <li><strong>Firebase:</strong> For cloud database storage (Firestore), analytics, and secure user authentication.</li>
+            <li><strong>Google Advertising ID (AAID):</strong> In accordance with Google Play Policy, the Google Mobile Ads SDK (AdMob) accesses the Android Advertising ID to serve banner advertisements, measure ad effectiveness, limit ad frequency, and prevent fraudulent clicks. You can reset or delete your AAID at any time in Android OS Settings.</li>
+            <li><strong>Non-Personal Device Diagnostics:</strong> Coarse technical data such as operating system version, device model, language preference, and app crash logs may be processed anonymously by Google Play services to ensure app stability.</li>
         </ul>
 
-        <h2>3. Data Use & Storage</h2>
-        <p>Your data is used solely to:</p>
+        <h3>C. Optional Account Information (Cloud Sync)</h3>
+        <p>If you optionally choose to sign in via Google Authentication to back up your progress across devices, we collect your <strong>email address</strong>, <strong>display name</strong>, and a unique <strong>Firebase Authentication User ID (UID)</strong>. You can use the app indefinitely in Guest / Offline mode without providing any account information.</p>
+
+        <h2>2. Android Operating System Permissions</h2>
+        <p>SipLumo requests only the minimum permissions required for operation on Android devices:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Permission</th>
+                    <th>Purpose & Functional Need</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>POST_NOTIFICATIONS</code></td>
+                    <td>Required on Android 13 (API 33) and above to deliver scheduled water drinking reminders during your active hours.</td>
+                </tr>
+                <tr>
+                    <td><code>RECEIVE_BOOT_COMPLETED</code></td>
+                    <td>Allows the app to reschedule your local notification timers automatically whenever your Android phone restarts.</td>
+                </tr>
+                <tr>
+                    <td><code>WAKE_LOCK</code></td>
+                    <td>Allows the local alarm manager to briefly awaken the device to trigger the notification chime or vibration at scheduled times.</td>
+                </tr>
+                <tr>
+                    <td><code>INTERNET</code> &amp; <code>ACCESS_NETWORK_STATE</code></td>
+                    <td>Required to load banner ads via Google AdMob and synchronize your hydration data with Firebase Firestore (if cloud backup is enabled).</td>
+                </tr>
+                <tr>
+                    <td><code>AD_ID</code></td>
+                    <td>Required by Google Play Services for apps integrating Google AdMob to access the Advertising ID for ad fraud prevention and ad serving.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Third-Party Service Providers</h2>
+        <p>We integrate vetted third-party SDKs that operate under strict privacy and security standards:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Third-Party Service</th>
+                    <th>Role in SipLumo</th>
+                    <th>Privacy Policy Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Google AdMob</strong> (Google LLC)</td>
+                    <td>Delivers banner advertisements. Operates the User Messaging Platform (UMP) to obtain GDPR/EEA/UK consent.</td>
+                    <td><a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Google Ads Privacy Policy</a></td>
+                </tr>
+                <tr>
+                    <td><strong>Google Firebase</strong> (Google LLC)</td>
+                    <td>Provides secure user authentication and Firestore cloud database storage for users who opt into cloud sync.</td>
+                    <td><a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Privacy Policy</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>4. User Consent & Ad Personalization (GDPR / UMP)</h2>
+        <p>For users located in the European Economic Area (EEA), the United Kingdom, and Switzerland, SipLumo implements Google's certified <strong>User Messaging Platform (UMP) SDK</strong>. On the first launch, eligible users are presented with a consent form to choose between personalized ads, non-personalized ads, or ad partners.</p>
+        <p><strong>Changing Your Consent:</strong> You can review or modify your advertising consent settings at any time within the app by navigating to <em>Settings &rarr; Privacy &amp; Legal &rarr; Ad Privacy Preferences</em>.</p>
+
+        <h2>5. Data Security and Encryption</h2>
         <ul>
-            <li>Calculate and track your personalized daily water goals.</li>
-            <li>Sync your data across devices securely via Firebase.</li>
-            <li>Show relevant advertisements.</li>
+            <li><strong>Encryption in Transit:</strong> All communications between the app and external services (Google Firebase, Google AdMob) are strictly encrypted using Transport Layer Security (TLS 1.2/1.3 / HTTPS).</li>
+            <li><strong>Isolated Cloud Data:</strong> If you use cloud sync, your data in Google Firestore is protected by strict security rules allowing read and write access solely to your authenticated Firebase UID.</li>
+            <li><strong>No Data Brokering:</strong> We never sell, lease, rent, or trade your personal wellness information, body metrics, or drinking logs to any third-party data broker or marketer.</li>
         </ul>
 
-        <h2>4. Data Deletion & Your Rights</h2>
-        <p>You have full control over your data. You can delete your account and all associated data (logs, profile info) directly within the App settings at any time. This action is permanent and immediate.</p>
+        <h2>6. Account and Data Deletion Rights (Google Play Compliance)</h2>
+        <p>We respect your right to completely delete your data at any time. In full compliance with Google Play's Account Deletion Policy, you have two simple ways to exercise this right:</p>
 
-        <h2>5. Children's Privacy</h2>
-        <p>Water Reminder is not intended for children under 13. We do not knowingly collect personal information from children under 13.</p>
+        <ol>
+            <li><strong>Immediate In-App Deletion:</strong> Open the App &rarr; Go to <strong>Settings</strong> &rarr; Select <strong>"Delete Account &amp; Clear All Data"</strong>. This instantly wipes all local logs, user profile metrics, notification timers, streak records, and cloud Firestore entries permanently.</li>
+            <li><strong>Web-Based Deletion Portal (No App Required):</strong> If you have uninstalled the app or lost access to your device, you can request permanent deletion through our public web portal at: <br>
+            <a href="/delete-account" class="highlight"><strong>https://siplumo.app/delete-account</strong> (or /delete-account)</a>. Remote deletion requests are verified and processed within 24 to 48 hours.</li>
+        </ol>
 
-        <h2>6. Contact Us</h2>
-        <p>If you have any questions about your privacy, please contact us at: <br>
-        <span class="highlight">developercashop@gmail.com</span></p>
+        <h2>7. Health & Medical Policy Disclaimer</h2>
+        <div class="warning-box">
+            <strong>Google Play Health Policy Notice: SipLumo is NOT a Medical Device.</strong><br>
+            SipLumo is designed exclusively as an informational general wellness reminder app for healthy individuals. The calculated targets (~30 mL/kg standard) are general approximations. SipLumo does not diagnose, treat, cure, or prevent any illness, kidney condition, cardiovascular disease, or dehydration-related pathology. If you have been advised by a physician or nephrologist to restrict fluid intake, you must strictly follow your physician's clinical instructions rather than the app's estimates.
+        </div>
+
+        <h2>8. Children's Privacy (Target Audience 13+)</h2>
+        <p>SipLumo is intended for general audiences and individuals aged 13 and older (or the applicable age of digital consent in your jurisdiction). We do not knowingly collect, solicit, or store personal information from children under 13. If we become aware that a child under 13 has provided personal information without parental consent, we will promptly delete that information from our records.</p>
+
+        <h2>9. Changes to This Privacy Policy</h2>
+        <p>We may update our Privacy Policy from time to time to reflect changes in app functionality, regulatory requirements, or Google Play policies. Any updates will be posted on this page with an updated "Effective Date". We encourage you to review this policy periodically.</p>
+
+        <h2>10. Contact Us & Data Protection Officer</h2>
+        <p>If you have any questions, feedback, or concerns regarding this Privacy Policy, your personal data, or data deletion requests, please contact our developer support team:</p>
+        <ul>
+            <li><strong>Developer / Publisher:</strong> Aditya</li>
+            <li><strong>Primary Contact Email:</strong> <a href="mailto:adityaa89468@gmail.com">adityaa89468@gmail.com</a></li>
+            <li><strong>Privacy Support:</strong> <a href="mailto:privacy@siplumo.app">privacy@siplumo.app</a></li>
+            <li><strong>Web Deletion Portal:</strong> <a href="/delete-account">/delete-account</a></li>
+        </ul>
     </div>
+    
     <div class="footer">
-        &copy; 2026 Water Reminder. All rights reserved.
+        &copy; 2026 SipLumo (Water Reminder). All rights reserved. &bull; 
+        <a href="/terms">Terms of Service</a> &bull; 
+        <a href="/privacy-policy">Privacy Policy</a> &bull; 
+        <a href="/delete-account">Account Deletion</a>
     </div>
 </body>
 </html>
+

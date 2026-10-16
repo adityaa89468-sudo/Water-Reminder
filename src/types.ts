@@ -12,7 +12,7 @@ export type PregnancyStatus = 'none' | 'pregnant' | 'breastfeeding';
 
 export type ReminderMode = 'smart' | 'fixed';
 
-export type DrinkType = 'water' | 'infused' | 'tea' | 'electrolyte' | 'mineral';
+export type DrinkType = 'water' | 'tea' | 'coffee' | 'juice' | 'infused' | 'electrolyte' | 'mineral';
 
 export interface GlassPreset {
   id: string;
@@ -70,6 +70,7 @@ export interface UserProfile {
   streak: number;
   bestStreak: number;
   totalDrankMl: number;
+  unlockedBadges?: Record<string, string>; // badgeId -> ISO string date unlocked
 }
 
 export interface WaterLog {
@@ -97,4 +98,4 @@ export interface TargetCalculationBreakdown {
   lastReviewedDate: string;
 }
 
-export type ActiveTab = 'home' | 'history' | 'insights' | 'tips' | 'settings';
+export type ActiveTab = 'home' | 'history' | 'insights' | 'achievements' | 'tips' | 'settings';

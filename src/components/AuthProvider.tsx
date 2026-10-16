@@ -14,11 +14,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    try {
+      const unsubscribe = onAuthStateChanged(
+        auth,
+        (user) => {
+          setUser(user);
+          setLoading(false);
+        },
+        (error) => {
+          console.warn('Firebase auth listener notice:', error);
+          setLoading(false);
+        }
+      );
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn('Failed to register Firebase auth listener:', e);
       setLoading(false);
-    });
-    return () => unsubscribe();
+    }
   }, []);
 
   return (

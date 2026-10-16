@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { X, Trash2, Check, Clock } from 'lucide-react';
 import { WaterLog, UnitSystem, DrinkType } from '../types';
 import { formatVolumeExact, flOzToMl, mlToFlOz } from '../utils/calculations';
+import {
+  DrinkTypeIcon,
+  getDrinkTypeMetadata,
+  ALL_DRINK_TYPES
+} from '../utils/drinkTypes';
 
 interface EditLogModalProps {
   log: WaterLog;
@@ -22,7 +27,7 @@ export const EditLogModal: React.FC<EditLogModalProps> = ({
   const [amountInput, setAmountInput] = useState(initialAmount);
   const [selectedType, setSelectedType] = useState<DrinkType>(log.drinkType || 'water');
   const [note, setNote] = useState(log.note || '');
-  
+
   // Format datetime-local string
   const dateObj = new Date(log.timestamp);
   const formattedTimeStr = dateObj.toISOString().slice(0, 16);
@@ -40,14 +45,26 @@ export const EditLogModal: React.FC<EditLogModalProps> = ({
     onClose();
   };
 
+  const selectedMeta = getDrinkTypeMetadata(selectedType);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4">
         
         <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            Edit Water Entry
-          </h3>
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-xl ${selectedMeta.iconBg} ${selectedMeta.iconColor} flex items-center justify-center`}>
+              <DrinkTypeIcon type={selectedType} className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                Edit Hydration Entry
+              </h3>
+              <p className="text-[10px] text-slate-400 capitalize">
+                Category: {selectedMeta.label}
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
             className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -80,7 +97,7 @@ export const EditLogModal: React.FC<EditLogModalProps> = ({
 
           <div>
             <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Date & Time
+              Date &amp; Time
             </label>
             <input
               type="datetime-local"
@@ -91,25 +108,31 @@ export const EditLogModal: React.FC<EditLogModalProps> = ({
             />
           </div>
 
+          {/* Beverage Category Selector with Custom Icons */}
           <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Drink Type
+            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              Beverage Category
             </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              {(['water', 'infused', 'tea', 'mineral', 'electrolyte'] as DrinkType[]).map(t => (
-                <button
-                  type="button"
-                  key={t}
-                  onClick={() => setSelectedType(t)}
-                  className={`py-1.5 px-2 rounded-xl capitalize font-semibold border ${
-                    selectedType === t
-                      ? 'bg-sky-100 dark:bg-sky-950 border-sky-500 text-sky-700 dark:text-sky-300'
-                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              {ALL_DRINK_TYPES.map(t => {
+                const isSelected = selectedType === t;
+                const meta = getDrinkTypeMetadata(t);
+                return (
+                  <button
+                    type="button"
+                    key={t}
+                    onClick={() => setSelectedType(t)}
+                    className={`p-2 rounded-xl text-xs font-semibold border flex items-center gap-2 transition-all tap-active ${
+                      isSelected
+                        ? `${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText} shadow-xs ring-1 ring-sky-500/30 font-bold`
+                        : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <DrinkTypeIcon type={t} className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{meta.shortLabel}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -121,7 +144,7 @@ export const EditLogModal: React.FC<EditLogModalProps> = ({
               type="text"
               value={note}
               onChange={e => setNote(e.target.value)}
-              placeholder="e.g. morning glass"
+              placeholder="e.g. morning espresso, green tea"
               maxLength={40}
               className="w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white"
             />
@@ -134,7 +157,7 @@ export const EditLogModal: React.FC<EditLogModalProps> = ({
                 onDelete(log.id);
                 onClose();
               }}
-              className="p-2.5 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold flex items-center gap-1"
+              className="p-2.5 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-semibold flex items-center gap-1 tap-active"
             >
               <Trash2 className="w-4 h-4" />
               <span>Delete</span>
@@ -144,13 +167,13 @@ export const EditLogModal: React.FC<EditLogModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-semibold"
+                className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold shadow-xs flex items-center gap-1"
+                className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold flex items-center gap-1 shadow-xs"
               >
                 <Check className="w-4 h-4" />
                 <span>Save</span>

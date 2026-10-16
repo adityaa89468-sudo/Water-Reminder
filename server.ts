@@ -4,6 +4,7 @@ import session from "express-session";
 import { OAuth2Client } from "google-auth-library";
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
 
@@ -92,6 +93,52 @@ app.use(session({
 }));
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Helper to get static file path safely across dev and production
+function getPublicFilePath(filename: string): string {
+  const publicPath = path.join(process.cwd(), "public", filename);
+  if (fs.existsSync(publicPath)) return publicPath;
+  const distPath = path.join(process.cwd(), "dist", filename);
+  if (fs.existsSync(distPath)) return distPath;
+  return publicPath;
+}
+
+// Privacy Policy, Terms, and AdMob app-ads.txt Direct Routes
+app.get(["/privacy-policy", "/privacy", "/privacy.html"], (req, res) => {
+  const filePath = getPublicFilePath("privacy-policy.html");
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send("Privacy Policy not found");
+  }
+});
+
+app.get(["/terms", "/terms-and-conditions", "/terms.html"], (req, res) => {
+  const filePath = getPublicFilePath("terms-and-conditions.html");
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send("Terms and Conditions not found");
+  }
+});
+
+app.get(["/delete-account", "/account-deletion", "/delete-account.html"], (req, res) => {
+  const filePath = getPublicFilePath("delete-account.html");
+  if (fs.existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send("Account Deletion page not found");
+  }
+});
+
+app.get("/app-ads.txt", (req, res) => {
+  const filePath = getPublicFilePath("app-ads.txt");
+  if (fs.existsSync(filePath)) {
+    res.type("text/plain").sendFile(filePath);
+  } else {
+    res.status(404).send("app-ads.txt not found");
+  }
+});
 
 // Auth Routes
 app.get("/api/auth/url", (req, res) => {
@@ -302,18 +349,44 @@ app.post("/api/logout", (req, res) => {
   });
 });
 
+app.post("/api/delete-account", (req, res) => {
+  const { email } = req.body;
+  const sessionUserId = (req.session as any)?.userId;
+
+  try {
+    if (sessionUserId) {
+      db.prepare("DELETE FROM intake_logs WHERE user_id = ?").run(sessionUserId);
+      db.prepare("DELETE FROM users WHERE id = ?").run(sessionUserId);
+      req.session.destroy(() => {});
+    } else if (email) {
+      const user = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+      if (user) {
+        db.prepare("DELETE FROM intake_logs WHERE user_id = ?").run((user as any).id);
+        db.prepare("DELETE FROM users WHERE id = ?").run((user as any).id);
+      }
+    }
+    res.json({ success: true, message: "Account and records purged." });
+  } catch (err) {
+    console.error("Delete account error:", err);
+    res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  const distPath = path.join(process.cwd(), "dist");
+  const hasDist = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, "index.html"));
+
+  if (process.env.NODE_ENV === "production" && hasDist) {
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  } else {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    app.use(express.static(path.join(__dirname, "dist")));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
-    });
   }
 
   app.listen(PORT, "0.0.0.0", () => {

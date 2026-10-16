@@ -54,12 +54,14 @@ export const BannerAd: React.FC<BannerAdProps> = ({
 
     updateDimensions();
 
-    const resizeObserver = new ResizeObserver(() => {
-      updateDimensions();
-    });
+    if (typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver(() => {
+        updateDimensions();
+      });
 
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
+      resizeObserver.observe(containerRef.current);
+      return () => resizeObserver.disconnect();
+    }
   }, []);
 
   // Native Android AdMob Lifecycle
