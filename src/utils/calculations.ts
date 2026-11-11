@@ -11,7 +11,7 @@ import {
   WaterLog
 } from '../types';
 
-export const REVIEW_DATE = 'August 2026';
+export const REVIEW_DATE = 'November 11, 2026';
 
 /**
  * Unit Conversion Utilities

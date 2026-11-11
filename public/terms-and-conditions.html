@@ -3,81 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms & Conditions - Water Reminder</title>
+    <title>Terms &amp; Conditions - SipLumo (Water Reminder)</title>
     <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --slate-100: #f1f5f9;
+            --slate-50: #f8fafc;
+            --border: #e2e8f0;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #334155;
-            max-width: 800px;
+            line-height: 1.65;
+            color: var(--slate-700);
+            max-width: 860px;
             margin: 0 auto;
             padding: 40px 20px;
-            background-color: #f8fafc;
+            background-color: var(--slate-50);
         }
         .container {
-            background: white;
-            padding: 40px;
+            background: #ffffff;
+            padding: 44px;
             border-radius: 24px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+            border: 1px solid var(--border);
+        }
+        .badge {
+            display: inline-block;
+            background-color: #e0f2fe;
+            color: var(--primary-dark);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
         }
         h1 {
-            color: #0f172a;
+            color: var(--slate-900);
             margin-top: 0;
-            font-size: 2rem;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 15px;
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
         }
+        .meta-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 12px 16px;
+            background: var(--slate-50);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: var(--slate-600);
+            margin: 20px 0 28px 0;
+            border: 1px solid var(--border);
+        }
+        .meta-info span { display: inline-flex; align-items: center; gap: 6px; }
+        .meta-info strong { color: var(--slate-900); }
         h2 {
-            color: #1e293b;
-            margin-top: 30px;
-            font-size: 1.5rem;
+            color: var(--slate-900);
+            margin-top: 34px;
+            font-size: 1.35rem;
+            font-weight: 750;
+            border-left: 4px solid var(--primary);
+            padding-left: 14px;
+            letter-spacing: -0.01em;
         }
         p { margin-bottom: 16px; }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            font-size: 0.875rem;
-            color: #94a3b8;
+        ul, ol { margin-bottom: 16px; padding-left: 22px; }
+        li { margin-bottom: 8px; }
+        .warning-box {
+            background-color: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: #92400e;
         }
-        .warning {
-            background-color: #fff7ed;
-            border-left: 4px solid #f97316;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-weight: 500;
+        .highlight { color: var(--primary); font-weight: 600; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .footer {
+            margin-top: 44px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--slate-600);
+            border-top: 1px solid var(--border);
+            padding-top: 24px;
+        }
+        @media (max-width: 640px) {
+            body { padding: 16px 12px; }
+            .container { padding: 24px 18px; border-radius: 16px; }
+            h1 { font-size: 1.7rem; }
+            h2 { font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Terms & Conditions</h1>
-        <p><strong>Last updated: September 2, 2026</strong></p>
-        
-        <div class="warning">
-            <strong>Medical Disclaimer:</strong> SipLumo (Water Reminder) is NOT a medical device. Hydration needs vary by individual based on climate, activity, and physiology. Always consult with a qualified healthcare professional regarding clinical fluid restrictions or health conditions.
+        <span class="badge">Official Terms of Service</span>
+        <h1>Terms &amp; Conditions</h1>
+
+        <div class="meta-info">
+            <span><strong>Application:</strong> SipLumo - Water Reminder</span>
+            <span><strong>Package Name:</strong> com.aditya_production_water_reminder.app</span>
+            <span><strong>Effective Date:</strong> November 11, 2026</span>
         </div>
 
-        <h2>1. Acceptance of Terms</h2>
-        <p>By downloading, installing, or using SipLumo, you agree to be bound by these terms. If you do not agree, you must discontinue use and uninstall the App.</p>
+        <p>Welcome to <span class="highlight">SipLumo - Water Reminder</span> ("we", "our", or "the App"). These Terms &amp; Conditions govern your access to and use of the SipLumo mobile and web application, including its Home Screen Hydration Widget, Smart Reminders Widget, Daily Water Goal Calculator, and optional Cloud Backup services. By installing, accessing, or using the App, you agree to be bound by these Terms.</p>
 
-        <h2>2. User Responsibility</h2>
-        <p>You are responsible for listening to your body's physical thirst signals and providing accurate metrics for general target estimates. Use of the App and reliance on any calculated guidelines is at your own discretion.</p>
+        <div class="warning-box">
+            <strong>Important Medical &amp; Wellness Disclaimer:</strong><br>
+            SipLumo is NOT a medical device, diagnostic instrument, or clinical prescription tool. All daily water intake recommendations, hydration percentages, and daily pace comparisons are general wellness approximations intended for healthy adults. Always consult a qualified physician or healthcare professional regarding fluid intake if you have chronic kidney disease, heart failure, liver disease, electrolyte disorders, pregnancy/lactation needs, or take medications that affect fluid balance.
+        </div>
 
-        <h2>3. Advertisements & Third-Party SDKs</h2>
-        <p>The free version of the App integrates Google AdMob to display banner advertisements. By using the App, you acknowledge that Google AdMob may process device identifiers and ad interactions in accordance with Google's Privacy Policy.</p>
+        <h2>1. Eligibility &amp; Acceptance of Terms</h2>
+        <p>You must be at least 13 years of age (or the minimum age of digital consent in your country) to use SipLumo. If you do not agree with any part of these Terms or our <a href="/privacy-policy">Privacy Policy</a>, please discontinue use and uninstall the App.</p>
 
-        <h2>4. Data Security & Deletion Rights</h2>
-        <p>Your data is stored locally by default or synced to Google Firebase if you opt into cloud backup. You have the right to permanently erase your data at any time in-app or via our web portal at <a href="/delete-account" style="color: #0284c7;">/delete-account</a>.</p>
+        <h2>2. General Wellness Purpose &amp; Safe Hydration</h2>
+        <ul>
+            <li><strong>Personalized Intake Calculator:</strong> The Daily Water Goal Calculator in Settings estimates daily fluid intake using standard adult physiological references (~30 mL/kg baseline adjusted for activity level and local weather conditions: cold, temperate, or hot).</li>
+            <li><strong>Listening to Your Body:</strong> Calculated targets and widget pace alerts are informational guides only. Never force yourself to consume excess fluids beyond your natural thirst or physical comfort.</li>
+            <li><strong>Beverage Categories:</strong> Logging various drink categories (water, tea, coffee, juice, infused water, electrolytes, mineral water) is designed for personal habit tracking and does not constitute nutritional or medical advice.</li>
+        </ul>
 
-        <h2>5. Limitation of Liability</h2>
-        <p>In no event shall the developers be liable for any health conditions, data loss, or indirect damages resulting from the use or inability to use the App.</p>
+        <h2>3. User Accounts &amp; Cloud Backup</h2>
+        <ul>
+            <li><strong>Offline Mode &amp; Optional Sign-In:</strong> You may use SipLumo entirely offline without an account, or optionally sign in via <strong>Google Sign-In</strong> or <strong>Email &amp; Password</strong> to back up and restore your hydration history across devices.</li>
+            <li><strong>Account Security:</strong> You are responsible for safeguarding your account password and credentials.</li>
+            <li><strong>Account Deletion &amp; Data Export:</strong> You may export your drink history as a <code>.CSV</code> spreadsheet or permanently delete your account and all associated local and cloud data at any time inside Settings or at <a href="/delete-account">/delete-account</a>.</li>
+        </ul>
 
-        <h2>6. Contact & Support</h2>
-        <p>For questions, support, or feedback, reach us at: <br>
-        <strong>adityaa89468@gmail.com</strong> or <strong>privacy@siplumo.app</strong></p>
+        <h2>4. Widgets, Reminders &amp; Notifications</h2>
+        <p>SipLumo provides a Home Screen Hydration Widget (displaying hydration percentage, favorite drink quick-logging, and daily pace trend vs. yesterday) and a Smart Reminders Widget. Timely delivery of scheduled notifications depends on your device operating system permissions, battery optimization settings, and quiet hours configuration.</p>
+
+        <h2>5. Advertisements &amp; Third-Party Services</h2>
+        <p>To keep SipLumo free of subscription paywalls, the App displays banner advertisements via Google AdMob and utilizes Google Firebase for optional cloud synchronization. Your interaction with these services is governed by Google's applicable Terms of Service and Privacy Policy.</p>
+
+        <h2>6. Intellectual Property Rights</h2>
+        <p>All content, visual interfaces, custom beverage icons, widget designs, graphics, and source code within SipLumo are owned by the developer and protected by applicable copyright and intellectual property laws. You are granted a limited, personal, non-exclusive, non-commercial license to use the App.</p>
+
+        <h2>7. Limitation of Liability</h2>
+        <p>SipLumo is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, whether express or implied. In no event shall the developer be liable for any health outcomes, missed notifications, data loss, or indirect, incidental, or consequential damages arising out of your use or inability to use the App.</p>
+
+        <h2>8. Updates to These Terms</h2>
+        <p>We may revise these Terms &amp; Conditions periodically to reflect new features or legal requirements. Updated Terms will be posted on this page with a revised "Effective Date".</p>
+
+        <h2>9. Contact &amp; Developer Support</h2>
+        <p>For questions, support, or legal inquiries regarding these Terms &amp; Conditions, please contact:</p>
+        <ul>
+            <li><strong>Developer:</strong> Aditya</li>
+            <li><strong>Support Email:</strong> <a href="mailto:adityaa89468@gmail.com">adityaa89468@gmail.com</a></li>
+            <li><strong>Privacy &amp; Legal:</strong> <a href="mailto:privacy@siplumo.app">privacy@siplumo.app</a></li>
+        </ul>
     </div>
+
     <div class="footer">
-        &copy; 2026 SipLumo (Water Reminder). All rights reserved. | <a href="/privacy-policy" style="color: #64748b;">Privacy Policy</a> | <a href="/delete-account" style="color: #64748b;">Delete Account</a>
+        &copy; 2026 SipLumo (Water Reminder). All rights reserved. &bull;
+        <a href="/terms">Terms &amp; Conditions</a> &bull;
+        <a href="/privacy-policy">Privacy Policy</a> &bull;
+        <a href="/delete-account">Account Deletion</a>
     </div>
 </body>
 </html>

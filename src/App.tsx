@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { UserProfile, WaterLog, ActiveTab, UnitSystem, DrinkType, ReminderSettings } from './types';
+import { UserProfile, WaterLog, ActiveTab, DrinkType, ReminderSettings } from './types';
 import {
   loadUserProfile,
   saveUserProfile,
@@ -12,8 +12,18 @@ import {
   calculateStreak,
   clearAllData
 } from './utils/storage';
-import { initializeNotifications, scheduleDailyReminders } from './utils/notifications';
+import {
+  initializeNotifications,
+  scheduleDailyReminders,
+  setOnReminderFiredListener,
+  resetNextReminderFromNow,
+  snoozeReminder,
+  ReminderFiredEvent
+} from './utils/notifications';
+import { Droplets, BellRing, Plus, RotateCcw, X } from 'lucide-react';
 import { initAdMob } from './utils/admobService';
+import { useAuth } from './components/AuthProvider';
+import { syncProgressToFirestore } from './utils/cloudSync';
 
 // UI Subcomponents
 import { Navigation } from './components/Navigation';
@@ -31,9 +41,11 @@ import { SelfTestModal } from './components/SelfTestModal';
 import { AppTutorial } from './components/AppTutorial';
 import { Achievements } from './components/Achievements';
 import { MilestoneCelebrationModal } from './components/MilestoneCelebrationModal';
+import { AuthModal } from './components/AuthModal';
 import { calculateAchievements, UserAchievement } from './utils/achievements';
 
 export const App: React.FC = () => {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>(loadUserProfile());
   const [logs, setLogs] = useState<WaterLog[]>(loadWaterLogs());
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -45,8 +57,10 @@ export const App: React.FC = () => {
   const [showSelfTest, setShowSelfTest] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [showAchievementsModal, setShowAchievementsModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [unlockedMilestoneToCelebrate, setUnlockedMilestoneToCelebrate] = useState<UserAchievement | null>(null);
   const [legalTab, setLegalTab] = useState<'privacy' | 'terms' | 'deletion' | 'health_disclosure' | null>(null);
+  const [activeReminderAlert, setActiveReminderAlert] = useState<ReminderFiredEvent | null>(null);
 
   // Today's date string YYYY-MM-DD
   const todayStr = new Date().toISOString().split('T')[0];
@@ -62,11 +76,50 @@ export const App: React.FC = () => {
     }
   }, [profile.darkMode]);
 
+  // Listen for on-time hydration reminder alerts
+  useEffect(() => {
+    setOnReminderFiredListener(event => {
+      setActiveReminderAlert(event);
+    });
+    return () => {
+      setOnReminderFiredListener(null);
+    };
+  }, []);
+
+  // Sync authenticated user metadata into profile automatically
+  useEffect(() => {
+    if (user) {
+      setProfile(prev => {
+        const nextName =
+          user.displayName && (prev.displayName === 'Hydration Friend' || !prev.displayName)
+            ? user.displayName
+            : prev.displayName;
+        if (
+          prev.firebase_uid === user.uid &&
+          prev.email === (user.email || prev.email) &&
+          prev.displayName === nextName &&
+          prev.cloudSyncEnabled
+        ) {
+          return prev;
+        }
+        const updated: UserProfile = {
+          ...prev,
+          firebase_uid: user.uid,
+          email: user.email || prev.email,
+          displayName: nextName,
+          cloudSyncEnabled: true
+        };
+        saveUserProfile(updated);
+        return updated;
+      });
+    }
+  }, [user]);
+
   // Initialize notifications and AdMob on boot
   useEffect(() => {
     initializeNotifications();
     initAdMob();
-    if (profile.onboardingCompleted && profile.reminders.enabled) {
+    if (profile.onboardingCompleted) {
       scheduleDailyReminders(profile.reminders, todayTotalMl, profile.dailyTargetMl);
     }
   }, [profile.onboardingCompleted, profile.reminders, todayTotalMl, profile.dailyTargetMl]);
@@ -127,29 +180,50 @@ export const App: React.FC = () => {
   const handleAddWater = useCallback((amountMl: number, drinkType?: DrinkType, note?: string) => {
     const prevTotal = todayTotalMl;
     addWaterLog(amountMl, drinkType, note);
-    setLogs(loadWaterLogs());
+    const updatedLogs = loadWaterLogs();
+    setLogs(updatedLogs);
+
+    if (profile.reminders?.enabled) {
+      resetNextReminderFromNow(profile.reminders.intervalMinutes || 90);
+    }
+
+    if (user?.uid) {
+      syncProgressToFirestore(user.uid, profile, updatedLogs).catch(() => {});
+    }
 
     // Trigger celebration if target reached just now
     const newTotal = prevTotal + amountMl;
     if (prevTotal < profile.dailyTargetMl && newTotal >= profile.dailyTargetMl && profile.celebrationEnabled) {
       setShowCelebration(true);
     }
-  }, [todayTotalMl, profile.dailyTargetMl, profile.celebrationEnabled]);
+  }, [todayTotalMl, profile, user]);
 
   const handleUndoLastLog = useCallback(() => {
     undoLastLog();
-    setLogs(loadWaterLogs());
-  }, []);
+    const updatedLogs = loadWaterLogs();
+    setLogs(updatedLogs);
+    if (user?.uid) {
+      syncProgressToFirestore(user.uid, profile, updatedLogs).catch(() => {});
+    }
+  }, [user, profile]);
 
   const handleUpdateLog = useCallback((id: string, amount: number, timestamp: string, drinkType: DrinkType, note?: string) => {
     updateWaterLog(id, amount, timestamp, drinkType, note);
-    setLogs(loadWaterLogs());
-  }, []);
+    const updatedLogs = loadWaterLogs();
+    setLogs(updatedLogs);
+    if (user?.uid) {
+      syncProgressToFirestore(user.uid, profile, updatedLogs).catch(() => {});
+    }
+  }, [user, profile]);
 
   const handleDeleteLog = useCallback((id: string) => {
     deleteWaterLog(id);
-    setLogs(loadWaterLogs());
-  }, []);
+    const updatedLogs = loadWaterLogs();
+    setLogs(updatedLogs);
+    if (user?.uid) {
+      syncProgressToFirestore(user.uid, profile, updatedLogs).catch(() => {});
+    }
+  }, [user, profile]);
 
   const handleAddLogForDate = useCallback((amount: number, dateIso: string, drinkType: DrinkType = 'water') => {
     const newLog: WaterLog = {
@@ -163,7 +237,10 @@ export const App: React.FC = () => {
     const updated = [...current, newLog];
     saveWaterLogs(updated);
     setLogs(updated);
-  }, []);
+    if (user?.uid) {
+      syncProgressToFirestore(user.uid, profile, updated).catch(() => {});
+    }
+  }, [user, profile]);
 
   const handleUpdateTarget = useCallback((newTargetMl: number, isCustom: boolean) => {
     handleUpdateProfile({
@@ -173,6 +250,9 @@ export const App: React.FC = () => {
   }, [handleUpdateProfile]);
 
   const handleSaveReminderSettings = useCallback((newSettings: ReminderSettings) => {
+    if (newSettings.enabled) {
+      resetNextReminderFromNow(newSettings.intervalMinutes || 90);
+    }
     handleUpdateProfile({ reminders: newSettings });
     scheduleDailyReminders(newSettings, todayTotalMl, profile.dailyTargetMl);
   }, [handleUpdateProfile, todayTotalMl, profile.dailyTargetMl]);
@@ -202,11 +282,74 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 flex flex-col font-sans">
-      
-      {/* Main App Canvas Container (Constrained for mobile app feel on desktop) */}
-      <main className="flex-1 w-full max-w-md mx-auto px-4 pt-4 pb-24 overflow-x-hidden">
-        
+    <div className="min-h-screen w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 flex flex-col font-sans overflow-x-hidden">
+      {/* On-Time Floating Hydration Reminder Alert Banner */}
+      {activeReminderAlert && (
+        <div
+          role="alert"
+          data-testid="active-reminder-banner"
+          className="fixed top-3 left-3 right-3 sm:left-auto sm:right-6 sm:w-full sm:max-w-md z-50 bg-slate-900/95 dark:bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-sky-500/50 backdrop-blur-md animate-in fade-in duration-200"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 text-sky-400 flex items-center justify-center shrink-0">
+                <BellRing className="w-5 h-5 animate-bounce" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-white truncate">
+                    {activeReminderAlert.title}
+                  </h4>
+                  <span className="text-[11px] font-medium text-sky-300 shrink-0">
+                    {activeReminderAlert.firedAt}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                  {activeReminderAlert.body}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveReminderAlert(null)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 shrink-0"
+              aria-label="Dismiss reminder"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                handleAddWater(250, 'water');
+                setActiveReminderAlert(null);
+              }}
+              className="flex-1 py-2 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors tap-active"
+            >
+              <Droplets className="w-3.5 h-3.5 shrink-0" />
+              <Plus className="w-3.5 h-3.5 shrink-0 -ml-1" />
+              <span>Drink {profile.unitSystem === 'imperial' ? '8.5 oz' : '250 mL'} Now</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                snoozeReminder(profile.reminders?.snoozeMinutes || 15);
+                setActiveReminderAlert(null);
+              }}
+              className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors tap-active shrink-0"
+            >
+              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+              <span>Snooze {profile.reminders?.snoozeMinutes || 15}m</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Responsive App Canvas Container */}
+      <main className="flex-1 w-full max-w-5xl mx-auto px-3 sm:px-5 md:px-8 pt-[max(0.875rem,env(safe-area-inset-top))] pb-28 sm:pb-32 overflow-x-hidden">
         {/* Render Active View / Tab */}
         {legalTab !== null ? (
           <LegalPages
@@ -228,6 +371,7 @@ export const App: React.FC = () => {
                 onOpenReminders={() => setShowRemindersModal(true)}
                 onOpenHistory={() => setActiveTab('history')}
                 onOpenAchievements={() => setShowAchievementsModal(true)}
+                onOpenAuthModal={() => setShowAuthModal(true)}
               />
             )}
 
@@ -267,7 +411,7 @@ export const App: React.FC = () => {
                 profile={profile}
                 logs={logs}
                 onUpdateProfile={handleUpdateProfile}
-                onRestoreLogs={(restoredLogs) => {
+                onRestoreLogs={restoredLogs => {
                   setLogs(restoredLogs);
                   saveWaterLogs(restoredLogs);
                 }}
@@ -278,6 +422,7 @@ export const App: React.FC = () => {
                 onOpenSelfTest={() => setShowSelfTest(true)}
                 onResetApp={handleWipeAllData}
                 onOpenAchievements={() => setShowAchievementsModal(true)}
+                onOpenAuthModal={() => setShowAuthModal(true)}
               />
             )}
           </>
@@ -290,6 +435,20 @@ export const App: React.FC = () => {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           language={profile.language}
+        />
+      )}
+
+      {/* Account & Cloud Backup Modal */}
+      {showAuthModal && (
+        <AuthModal
+          profile={profile}
+          logs={logs}
+          onUpdateProfile={handleUpdateProfile}
+          onRestoreLogs={restoredLogs => {
+            setLogs(restoredLogs);
+            saveWaterLogs(restoredLogs);
+          }}
+          onClose={() => setShowAuthModal(false)}
         />
       )}
 
@@ -361,7 +520,6 @@ export const App: React.FC = () => {
           }}
         />
       )}
-
     </div>
   );
 };

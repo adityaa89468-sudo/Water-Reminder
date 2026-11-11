@@ -1,6 +1,31 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, GoogleAuthProvider as GoogleAuthProviderClass, signInWithCredential } from 'firebase/auth';
-import { initializeFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, getDocs, getDocFromServer, Timestamp } from 'firebase/firestore';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  GoogleAuthProvider as GoogleAuthProviderClass,
+  signInWithCredential,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
+} from 'firebase/auth';
+import {
+  initializeFirestore,
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  getDocs,
+  Timestamp
+} from 'firebase/firestore';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import { FirebaseMessaging } from '@capacitor-firebase/messaging';
 import { Capacitor } from '@capacitor/core';
@@ -9,10 +34,18 @@ import firebaseConfig from './firebase-applet-config.json';
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-}, (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-962fa691-cf68-4506-aa57-bc0738e34b65');
+export const db = initializeFirestore(
+  app,
+  {
+    experimentalForceLongPolling: true
+  },
+  (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-962fa691-cf68-4506-aa57-bc0738e34b65'
+);
+
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // FCM Functions
 export const requestNotificationPermissions = async () => {
@@ -33,7 +66,7 @@ export const getFCMToken = async () => {
 
 export const addNotificationListener = async (callback: (notification: any) => void) => {
   if (Capacitor.isNativePlatform()) {
-    await FirebaseMessaging.addListener('notificationReceived', (event) => {
+    await FirebaseMessaging.addListener('notificationReceived', event => {
       callback(event.notification);
     });
   }
@@ -48,9 +81,19 @@ export const loginWithGoogle = async () => {
     return signInWithPopup(auth, googleProvider);
   }
 };
+
 export const logout = async () => {
   if (Capacitor.isNativePlatform()) {
-    await FirebaseAuthentication.signOut();
+    try {
+      await FirebaseAuthentication.signOut();
+    } catch (e) {
+      // Ignore native signout notice if not signed in natively
+    }
+  }
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  } catch (e) {
+    // Ignore network notice
   }
   return signOut(auth);
 };
@@ -62,7 +105,7 @@ export enum OperationType {
   DELETE = 'delete',
   LIST = 'list',
   GET = 'get',
-  WRITE = 'write',
+  WRITE = 'write'
 }
 
 export interface FirestoreErrorInfo {
@@ -81,7 +124,7 @@ export interface FirestoreErrorInfo {
       email: string | null;
       photoUrl: string | null;
     }[];
-  }
+  };
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
@@ -93,21 +136,36 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
       emailVerified: auth.currentUser?.emailVerified,
       isAnonymous: auth.currentUser?.isAnonymous,
       tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
+      providerInfo:
+        auth.currentUser?.providerData.map(provider => ({
+          providerId: provider.providerId,
+          displayName: provider.displayName,
+          email: provider.email,
+          photoUrl: provider.photoURL
+        })) || []
     },
     operationType,
     path
-  }
-  console.error('Firestore Error Detailed: ', JSON.stringify(errInfo));
-  // We'll return the error info instead of throwing to avoid crashing the app during init
+  };
+  console.warn('Firestore operation notice:', JSON.stringify(errInfo));
   return errInfo;
 }
 
-// Connection check is handled lazily from the app controllers as needed.
-
-export { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, limit, onSnapshot, getDocs, Timestamp };
+export {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  getDocs,
+  Timestamp,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
+};

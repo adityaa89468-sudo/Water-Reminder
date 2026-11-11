@@ -1,20 +1,33 @@
 {
-  "name": "SipLumo",
+  "name": "SipLumo: Water Reminder & Tracker",
   "short_name": "SipLumo",
   "id": "/",
-  "description": "SipLumo is a production-ready, privacy-first water-drinking reminder and hydration tracking app.",
+  "description": "Simple, privacy-first daily water reminder and hydration tracker with smart goals, widgets, and optional cloud backup.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0284c7",
+  "categories": ["health", "fitness", "lifestyle"],
   "icons": [
     {
       "src": "/logo.png",
-      "sizes": "192x192 512x512",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

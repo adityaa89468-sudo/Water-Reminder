@@ -1,21 +1,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --dark-mode: selector(.dark);
 }
 
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    min-width: 0;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-slate-50 text-slate-900 antialiased transition-colors duration-300 dark:bg-slate-950 dark:text-slate-50;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    overflow-x: hidden;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: "Outfit", var(--font-sans);
   }
+}
+
+/* Adaptive Card & Border System for All Screen Sizes */
+.adaptive-card {
+  @apply bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xs transition-all;
+}
+
+/* Utility to hide scrollbars on horizontal pill strips while keeping touch scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom Water Wave & Material Ripple Utilities */
@@ -34,15 +62,19 @@
 }
 
 /* Touch feedback helper */
+.tap-active {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
 .tap-active:active {
   transform: scale(0.97);
   transition: transform 0.1s ease;
 }
 
-/* Custom scrollbar for clean android look */
+/* Custom scrollbar for clean desktop & mobile look */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -50,10 +82,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
+  background: rgba(148, 163, 184, 0.35);
   border-radius: 9999px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.4);
+  background: rgba(100, 116, 139, 0.45);
 }

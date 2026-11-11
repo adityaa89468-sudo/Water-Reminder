@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, RotateCcw, SlidersHorizontal, Check, X } from 'lucide-react';
+import { Plus, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
 import { GlassPreset, UnitSystem, DrinkType } from '../types';
 import { formatVolumeExact, flOzToMl } from '../utils/calculations';
 import {
@@ -30,13 +30,6 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
   const [selectedDrinkType, setSelectedDrinkType] = useState<DrinkType>('water');
   const [customNote, setCustomNote] = useState<string>('');
 
-  const standardQuickButtons = [
-    { label: unitSystem === 'imperial' ? '3.4 oz' : '+100 mL', ml: 100 },
-    { label: unitSystem === 'imperial' ? '6.8 oz' : '+200 mL', ml: 200 },
-    { label: unitSystem === 'imperial' ? '8.5 oz' : '+250 mL', ml: 250 },
-    { label: unitSystem === 'imperial' ? '16.9 oz' : '+500 mL', ml: 500 }
-  ];
-
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(customAmountInput);
@@ -51,46 +44,46 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
   const currentMeta = getDrinkTypeMetadata(selectedDrinkType);
 
   return (
-    <div className="w-full space-y-4">
-      {/* Primary Presets Bar */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-sm space-y-3">
-        
-        {/* Header with Undo & Manage */}
-        <div className="flex items-center justify-between px-1">
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Quick Log Presets
+    <div className="w-full">
+      <div className="adaptive-card space-y-4">
+        {/* Header with Undo */}
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Add a Drink
             </h3>
-            <p className="text-[11px] text-slate-400">
-              Logging as: <span className="font-bold capitalize text-slate-700 dark:text-slate-200">{currentMeta.label}</span>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Choose your drink type and tap a cup size
             </p>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5 shrink-0">
             {hasLogsToUndo && (
               <button
+                type="button"
                 onClick={onUndo}
-                className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 inline-flex items-center gap-1 px-2.5 py-1 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors tap-active"
+                className="text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-950/50 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl transition-colors tap-active min-h-[38px]"
                 title="Undo last entry"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                 <span>Undo</span>
               </button>
             )}
             {onManagePresets && (
               <button
+                type="button"
                 onClick={onManagePresets}
-                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                title="Customize presets"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-xl border border-slate-200/80 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[38px] min-w-[38px] flex items-center justify-center"
+                title="Customize cup sizes"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <SlidersHorizontal className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
 
-        {/* Drink Type Quick Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        {/* Drink Type Selector Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
           {ALL_DRINK_TYPES.map(type => {
             const isSelected = selectedDrinkType === type;
             const meta = getDrinkTypeMetadata(type);
@@ -99,9 +92,9 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
                 key={type}
                 type="button"
                 onClick={() => setSelectedDrinkType(type)}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all tap-active border ${
+                className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all tap-active border min-h-[38px] ${
                   isSelected
-                    ? `${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText} shadow-xs ring-1 ring-sky-500/30`
+                    ? `${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText}`
                     : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                 }`}
                 title={`Log as ${meta.label}`}
@@ -113,52 +106,51 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
           })}
         </div>
 
-        {/* User Presets Grid with Dynamic Custom Drink Icon */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+        {/* Cup Presets Grid + Custom Amount Button */}
+        <div className="grid grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2.5">
           {presets.map(preset => (
             <button
               key={preset.id}
+              type="button"
               onClick={() => onAddWater(preset.amount, selectedDrinkType)}
-              className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-150 shadow-xs active:scale-95 min-h-[76px] ${
+              className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all duration-150 active:scale-95 min-h-[76px] min-w-0 ${
                 selectedDrinkType === 'water'
-                  ? 'bg-sky-50/70 hover:bg-sky-100/90 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border-sky-100 dark:border-slate-700 text-sky-900 dark:text-sky-100'
+                  ? 'bg-sky-50/60 hover:bg-sky-100/80 dark:bg-slate-800/80 dark:hover:bg-slate-700 border-sky-200/80 dark:border-slate-700 text-sky-900 dark:text-sky-100'
                   : `${currentMeta.badgeBg} hover:opacity-95 ${currentMeta.badgeBorder} ${currentMeta.badgeText}`
               }`}
-              title={`Log ${formatVolumeExact(preset.amount, unitSystem)} of ${currentMeta.shortLabel}`}
+              title={`Add ${formatVolumeExact(preset.amount, unitSystem)} of ${currentMeta.shortLabel}`}
             >
-              <div className="mb-1">
+              <div className="mb-1.5">
                 <DrinkTypeIcon type={selectedDrinkType} className="w-5 h-5" />
               </div>
-              <span className="text-xs font-bold leading-tight">
-                {formatVolumeExact(preset.amount, unitSystem)}
+              <span className="text-xs font-bold leading-tight tabular-nums truncate max-w-full">
+                +{formatVolumeExact(preset.amount, unitSystem)}
               </span>
-              <span className="text-[10px] opacity-75 truncate max-w-full">
+              <span className="text-[11px] opacity-75 truncate max-w-full mt-0.5">
                 {preset.name}
               </span>
             </button>
           ))}
-        </div>
 
-        {/* Quick Sizes & Custom Button */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2">
-          {standardQuickButtons.map((btn, idx) => (
-            <button
-              key={idx}
-              onClick={() => onAddWater(btn.ml, selectedDrinkType)}
-              className="flex-1 py-2 px-2.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors tap-active min-h-[40px]"
-            >
-              {btn.label}
-            </button>
-          ))}
+          {/* Custom Amount Button */}
           <button
+            type="button"
             onClick={() => {
               setCustomAmountInput(unitSystem === 'imperial' ? '8' : '250');
               setShowCustomModal(true);
             }}
-            className="flex-1 py-2 px-3 text-xs font-bold rounded-xl bg-gradient-to-r from-sky-600 via-indigo-600 to-teal-600 text-white hover:opacity-95 shadow-xs transition-all tap-active flex items-center justify-center gap-1 min-h-[40px]"
+            className="flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-500 text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 transition-colors active:scale-95 min-h-[76px] min-w-0"
+            title="Enter a custom drink amount"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Custom</span>
+            <div className="mb-1.5">
+              <Plus className="w-5 h-5" />
+            </div>
+            <span className="text-xs font-bold leading-tight">
+              Custom
+            </span>
+            <span className="text-[11px] opacity-75 mt-0.5">
+              Any size
+            </span>
           </button>
         </div>
       </div>
@@ -166,14 +158,15 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
       {/* Custom Log Dialog */}
       {showCustomModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 w-full max-w-sm shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Log Custom Amount
+                Add Custom Amount
               </h3>
               <button
+                type="button"
                 onClick={() => setShowCustomModal(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -182,7 +175,7 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
             <form onSubmit={handleCustomSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                  Volume ({unitSystem === 'imperial' ? 'fl oz' : 'mL'})
+                  Amount ({unitSystem === 'imperial' ? 'fl oz' : 'mL'})
                 </label>
                 <div className="relative">
                   <input
@@ -192,7 +185,7 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
                     step={unitSystem === 'imperial' ? '0.5' : '10'}
                     value={customAmountInput}
                     onChange={e => setCustomAmountInput(e.target.value)}
-                    className="w-full text-2xl font-bold bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl px-4 py-3 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-sky-500"
+                    className="w-full text-2xl font-bold bg-slate-50 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 rounded-2xl px-4 py-3 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-sky-500 tabular-nums"
                     autoFocus
                     required
                   />
@@ -202,10 +195,10 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
                 </div>
               </div>
 
-              {/* Drink Type Selector with Custom Icons */}
+              {/* Drink Type Selector */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                  Beverage Category
+                  Drink Type
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {ALL_DRINK_TYPES.map(type => {
@@ -216,19 +209,14 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
                         type="button"
                         key={type}
                         onClick={() => setSelectedDrinkType(type)}
-                        className={`p-2.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 tap-active ${
+                        className={`p-2.5 rounded-xl text-xs font-semibold border transition-all flex items-center gap-2 tap-active min-w-0 ${
                           isSelected
-                            ? `${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText} shadow-xs ring-2 ring-sky-500/30`
+                            ? `${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText}`
                             : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                         }`}
                       >
-                        <div className={`w-6 h-6 rounded-lg ${meta.iconBg} ${meta.iconColor} flex items-center justify-center shrink-0`}>
-                          <DrinkTypeIcon type={type} className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="text-left min-w-0">
-                          <span className="font-bold block truncate">{meta.shortLabel}</span>
-                          <span className="text-[9px] text-slate-400 block truncate">{meta.category}</span>
-                        </div>
+                        <DrinkTypeIcon type={type} className="w-4 h-4 shrink-0" />
+                        <span className="font-bold truncate">{meta.shortLabel}</span>
                       </button>
                     );
                   })}
@@ -242,7 +230,7 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g., Morning espresso, fresh orange juice"
+                  placeholder="e.g., After morning walk"
                   maxLength={50}
                   value={customNote}
                   onChange={e => setCustomNote(e.target.value)}
@@ -260,9 +248,9 @@ export const QuickAddPresets: React.FC<QuickAddPresetsProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 text-xs font-bold text-white rounded-xl bg-sky-600 hover:bg-sky-700 shadow-md transition-colors"
+                  className="flex-1 py-2.5 text-xs font-bold text-white rounded-xl bg-sky-600 hover:bg-sky-700 transition-colors"
                 >
-                  Save Entry
+                  Add Drink
                 </button>
               </div>
             </form>

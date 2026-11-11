@@ -146,44 +146,47 @@
         <div class="meta-info">
             <span><strong>Application:</strong> SipLumo - Water Reminder</span>
             <span><strong>Package Name:</strong> com.aditya_production_water_reminder.app</span>
-            <span><strong>Effective Date:</strong> September 2, 2026</span>
+            <span><strong>Effective Date:</strong> November 11, 2026</span>
         </div>
         
         <p>At <span class="highlight">SipLumo - Water Reminder</span> ("we", "our", or "the App"), built and maintained by Aditya, we value your trust and are committed to protecting your privacy. This Privacy Policy details the exact types of information we collect, how that information is utilized, stored, and shared, and the rights you retain over your data, in full adherence to the <strong>Google Play Developer Program Policies</strong>, the <strong>General Data Protection Regulation (GDPR)</strong>, the <strong>California Consumer Privacy Act (CCPA)</strong>, and applicable international privacy laws.</p>
 
         <div class="notice-box">
-            <strong>Key Summary:</strong> SipLumo is architected as an <strong>offline-first</strong> utility. By default, all your hydration logs, daily targets, and schedule settings are stored locally on your device. We do not sell or broker your personal information. Optional cloud backup is provided via Google Firebase, and banner advertising is served via Google AdMob in accordance with user consent.
+            <strong>Key Summary:</strong> SipLumo is architected as an <strong>offline-first</strong> wellness utility. By default, all your hydration logs, beverage categories, daily targets, widget preferences, and reminder schedules are stored locally on your device. We never sell or broker your personal information. Optional cloud backup is provided via Google Sign-In or Email &amp; Password authentication, and banner advertising is served via Google AdMob in accordance with user consent.
         </div>
 
         <h2>1. Information We Collect and Process</h2>
-        <p>We only collect data that is strictly necessary to calculate personalized wellness hydration recommendations, send timely hydration reminders, and sustain our free service.</p>
+        <p>We only collect data that is strictly necessary to calculate personalized wellness hydration recommendations, power the Home Screen Hydration Widget and Smart Reminders Widget, and sustain our free service.</p>
 
         <h3>A. Information You Provide Directly</h3>
         <ul>
-            <li><strong>Physical & Wellness Parameters:</strong> Body weight, height, approximate age bracket, and biological sex. These metrics are used strictly to calculate your baseline fluid intake guidelines (~30 mL/kg reference calculation) based on standard European Food Safety Authority (EFSA) references.</li>
-            <li><strong>Daily Routine & Schedule:</strong> Wake-up time, bedtime, and quiet hours. These are used locally by the app's notification scheduler to ensure you are never disturbed while sleeping.</li>
-            <li><strong>Environmental & Lifestyle Context:</strong> Activity level (low, moderate, high), climate conditions (cool, normal, hot), and optional flags for pregnancy or breastfeeding. These provide contextual adjustments to baseline fluid targets.</li>
-            <li><strong>Hydration Intake Logs:</strong> Timestamps of fluid consumption, volume (in mL or oz), beverage categories (water, infused water, tea, electrolytes, mineral water, etc.), and optional user notes.</li>
-            <li><strong>Special Health Considerations (Self-Reported):</strong> Indications of fluid restrictions or kidney, heart, or liver conditions, used solely to display prominent advisory banners prompting adherence to physician-prescribed limits.</li>
+            <li><strong>Physical &amp; Daily Goal Parameters:</strong> Body weight, height, approximate age bracket, biological sex, daily activity level (light, moderate, active), and local weather conditions (cold, temperate, hot). These parameters are used to compute your recommended daily water intake (~30 mL/kg adult baseline adjusted for activity and climate).</li>
+            <li><strong>Daily Routine &amp; Smart Reminder Schedule:</strong> Wake-up time, bedtime, reminder interval, snooze preferences, and quiet hours. These are used by the notification scheduler and Smart Reminders Widget so you are never disturbed while sleeping.</li>
+            <li><strong>Hydration Intake Logs &amp; Beverage Categories:</strong> Timestamps of fluid consumption, volume (in mL or fl oz), beverage categories (water, herbal/tea, coffee, fruit/veg juice, infused water, electrolytes, mineral/sparkling water), and optional notes. These also power the Home Screen Widget's favorite drink quick-log and daily pace comparison versus yesterday.</li>
+            <li><strong>Special Health Considerations (Self-Reported):</strong> Optional flags for pregnancy, breastfeeding, or physician-advised fluid restrictions, used solely to display safety reminders prompting adherence to medical guidance.</li>
         </ul>
 
-        <h3>B. Information Collected Automatically (AdMob & Diagnostics)</h3>
+        <h3>B. Optional Account &amp; Cloud Backup Information</h3>
+        <p>You can use SipLumo indefinitely in offline mode without creating an account. If you optionally choose to sign in to back up and synchronize your hydration progress across devices:</p>
+        <ul>
+            <li><strong>Google Sign-In:</strong> We receive your <strong>email address</strong>, <strong>display name</strong>, and unique <strong>Firebase Authentication User ID (UID)</strong>.</li>
+            <li><strong>Email &amp; Password Sign-In:</strong> We collect your <strong>email address</strong>, <strong>display name</strong>, and a cryptographically hashed password (SHA-256 salted hash) to authenticate your session and sync your hydration records.</li>
+        </ul>
+
+        <h3>C. Information Collected Automatically (AdMob &amp; Diagnostics)</h3>
         <ul>
             <li><strong>Google Advertising ID (AAID):</strong> In accordance with Google Play Policy, the Google Mobile Ads SDK (AdMob) accesses the Android Advertising ID to serve banner advertisements, measure ad effectiveness, limit ad frequency, and prevent fraudulent clicks. You can reset or delete your AAID at any time in Android OS Settings.</li>
-            <li><strong>Non-Personal Device Diagnostics:</strong> Coarse technical data such as operating system version, device model, language preference, and app crash logs may be processed anonymously by Google Play services to ensure app stability.</li>
+            <li><strong>Coarse Device Diagnostics:</strong> Non-personal technical metadata such as OS version, device model, language preference, and crash diagnostics may be processed by Google Play Services to ensure stability.</li>
         </ul>
 
-        <h3>C. Optional Account Information (Cloud Sync)</h3>
-        <p>If you optionally choose to sign in via Google Authentication to back up your progress across devices, we collect your <strong>email address</strong>, <strong>display name</strong>, and a unique <strong>Firebase Authentication User ID (UID)</strong>. You can use the app indefinitely in Guest / Offline mode without providing any account information.</p>
-
         <h2>2. Android Operating System Permissions</h2>
-        <p>SipLumo requests only the minimum permissions required for operation on Android devices:</p>
+        <p>SipLumo requests only the minimum permissions required for operation on Android and web devices:</p>
 
         <table>
             <thead>
                 <tr>
                     <th>Permission</th>
-                    <th>Purpose & Functional Need</th>
+                    <th>Purpose &amp; Functional Need</th>
                 </tr>
             </thead>
             <tbody>
@@ -201,7 +204,7 @@
                 </tr>
                 <tr>
                     <td><code>INTERNET</code> &amp; <code>ACCESS_NETWORK_STATE</code></td>
-                    <td>Required to load banner ads via Google AdMob and synchronize your hydration data with Firebase Firestore (if cloud backup is enabled).</td>
+                    <td>Required to load banner ads via Google AdMob and synchronize your hydration data with cloud backup servers when signed in.</td>
                 </tr>
                 <tr>
                     <td><code>AD_ID</code></td>
@@ -211,7 +214,7 @@
         </table>
 
         <h2>3. Third-Party Service Providers</h2>
-        <p>We integrate vetted third-party SDKs that operate under strict privacy and security standards:</p>
+        <p>We integrate vetted third-party services that operate under strict privacy and security standards:</p>
 
         <table>
             <thead>
@@ -224,50 +227,51 @@
             <tbody>
                 <tr>
                     <td><strong>Google AdMob</strong> (Google LLC)</td>
-                    <td>Delivers banner advertisements. Operates the User Messaging Platform (UMP) to obtain GDPR/EEA/UK consent.</td>
+                    <td>Delivers banner advertisements and operates the User Messaging Platform (UMP) to obtain GDPR/EEA/UK consent.</td>
                     <td><a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">Google Ads Privacy Policy</a></td>
                 </tr>
                 <tr>
                     <td><strong>Google Firebase</strong> (Google LLC)</td>
-                    <td>Provides secure user authentication and Firestore cloud database storage for users who opt into cloud sync.</td>
+                    <td>Provides user authentication and Firestore cloud database storage for users who opt into cloud backup.</td>
                     <td><a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase Privacy Policy</a></td>
                 </tr>
             </tbody>
         </table>
 
-        <h2>4. User Consent & Ad Personalization (GDPR / UMP)</h2>
-        <p>For users located in the European Economic Area (EEA), the United Kingdom, and Switzerland, SipLumo implements Google's certified <strong>User Messaging Platform (UMP) SDK</strong>. On the first launch, eligible users are presented with a consent form to choose between personalized ads, non-personalized ads, or ad partners.</p>
-        <p><strong>Changing Your Consent:</strong> You can review or modify your advertising consent settings at any time within the app by navigating to <em>Settings &rarr; Privacy &amp; Legal &rarr; Ad Privacy Preferences</em>.</p>
+        <h2>4. User Consent &amp; Ad Personalization (GDPR / UMP)</h2>
+        <p>For users located in the European Economic Area (EEA), the United Kingdom, and Switzerland, SipLumo implements Google's certified <strong>User Messaging Platform (UMP) SDK</strong>. On first launch, eligible users are presented with a consent dialog to choose between personalized or non-personalized ads.</p>
+        <p><strong>Changing Your Consent:</strong> You can review or modify your advertising consent settings at any time within the app by navigating to <em>Settings &rarr; Privacy &amp; Account &rarr; Privacy Policy &rarr; Manage Consent</em>.</p>
 
-        <h2>5. Data Security and Encryption</h2>
+        <h2>5. Data Security, Export &amp; Encryption</h2>
         <ul>
-            <li><strong>Encryption in Transit:</strong> All communications between the app and external services (Google Firebase, Google AdMob) are strictly encrypted using Transport Layer Security (TLS 1.2/1.3 / HTTPS).</li>
-            <li><strong>Isolated Cloud Data:</strong> If you use cloud sync, your data in Google Firestore is protected by strict security rules allowing read and write access solely to your authenticated Firebase UID.</li>
+            <li><strong>Encryption in Transit:</strong> All communications between the app and cloud servers are encrypted using Transport Layer Security (TLS 1.2/1.3 / HTTPS).</li>
+            <li><strong>Isolated Cloud Data:</strong> When using cloud sync, your profile and water logs are isolated to your authenticated user account and protected by owner-only security rules.</li>
+            <li><strong>Data Portability (.CSV Export):</strong> You can download a complete copy of your hydration history as a standard <code>.CSV</code> spreadsheet file at any time from <em>Settings &rarr; Account, Backup &amp; Export</em>.</li>
             <li><strong>No Data Brokering:</strong> We never sell, lease, rent, or trade your personal wellness information, body metrics, or drinking logs to any third-party data broker or marketer.</li>
         </ul>
 
         <h2>6. Account and Data Deletion Rights (Google Play Compliance)</h2>
-        <p>We respect your right to completely delete your data at any time. In full compliance with Google Play's Account Deletion Policy, you have two simple ways to exercise this right:</p>
+        <p>We respect your right to completely erase your data at any time. In full compliance with Google Play's Account Deletion Policy, you have two simple methods to exercise this right:</p>
 
         <ol>
-            <li><strong>Immediate In-App Deletion:</strong> Open the App &rarr; Go to <strong>Settings</strong> &rarr; Select <strong>"Delete Account &amp; Clear All Data"</strong>. This instantly wipes all local logs, user profile metrics, notification timers, streak records, and cloud Firestore entries permanently.</li>
+            <li><strong>Immediate In-App Deletion:</strong> Open the App &rarr; Go to <strong>Settings</strong> &rarr; Select <strong>"Delete Account &amp; Clear All Data"</strong>. This immediately wipes all local logs, user profile metrics, notification timers, streak records, and cloud backup entries permanently.</li>
             <li><strong>Web-Based Deletion Portal (No App Required):</strong> If you have uninstalled the app or lost access to your device, you can request permanent deletion through our public web portal at: <br>
-            <a href="/delete-account" class="highlight"><strong>https://siplumo.app/delete-account</strong> (or /delete-account)</a>. Remote deletion requests are verified and processed within 24 to 48 hours.</li>
+            <a href="/delete-account" class="highlight"><strong>/delete-account</strong></a>.</li>
         </ol>
 
-        <h2>7. Health & Medical Policy Disclaimer</h2>
+        <h2>7. Health &amp; Medical Policy Disclaimer</h2>
         <div class="warning-box">
             <strong>Google Play Health Policy Notice: SipLumo is NOT a Medical Device.</strong><br>
-            SipLumo is designed exclusively as an informational general wellness reminder app for healthy individuals. The calculated targets (~30 mL/kg standard) are general approximations. SipLumo does not diagnose, treat, cure, or prevent any illness, kidney condition, cardiovascular disease, or dehydration-related pathology. If you have been advised by a physician or nephrologist to restrict fluid intake, you must strictly follow your physician's clinical instructions rather than the app's estimates.
+            SipLumo is designed exclusively as an informational general wellness reminder app for healthy individuals. The calculated targets (~30 mL/kg standard adjusted for activity and weather) are general approximations. SipLumo does not diagnose, treat, cure, or prevent any illness, kidney condition, cardiovascular disease, or dehydration-related pathology. If you have been advised by a physician or nephrologist to restrict fluid intake, you must strictly follow your physician's clinical instructions rather than the app's estimates.
         </div>
 
         <h2>8. Children's Privacy (Target Audience 13+)</h2>
         <p>SipLumo is intended for general audiences and individuals aged 13 and older (or the applicable age of digital consent in your jurisdiction). We do not knowingly collect, solicit, or store personal information from children under 13. If we become aware that a child under 13 has provided personal information without parental consent, we will promptly delete that information from our records.</p>
 
         <h2>9. Changes to This Privacy Policy</h2>
-        <p>We may update our Privacy Policy from time to time to reflect changes in app functionality, regulatory requirements, or Google Play policies. Any updates will be posted on this page with an updated "Effective Date". We encourage you to review this policy periodically.</p>
+        <p>We may update our Privacy Policy from time to time to reflect changes in app functionality, regulatory requirements, or Google Play policies. Any updates will be posted on this page with an updated "Effective Date".</p>
 
-        <h2>10. Contact Us & Data Protection Officer</h2>
+        <h2>10. Contact Us &amp; Data Protection Officer</h2>
         <p>If you have any questions, feedback, or concerns regarding this Privacy Policy, your personal data, or data deletion requests, please contact our developer support team:</p>
         <ul>
             <li><strong>Developer / Publisher:</strong> Aditya</li>
@@ -279,10 +283,9 @@
     
     <div class="footer">
         &copy; 2026 SipLumo (Water Reminder). All rights reserved. &bull; 
-        <a href="/terms">Terms of Service</a> &bull; 
+        <a href="/terms">Terms &amp; Conditions</a> &bull; 
         <a href="/privacy-policy">Privacy Policy</a> &bull; 
         <a href="/delete-account">Account Deletion</a>
     </div>
 </body>
 </html>
-

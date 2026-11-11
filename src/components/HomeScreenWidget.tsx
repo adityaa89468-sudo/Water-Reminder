@@ -3,26 +3,14 @@ import {
   Droplet,
   Plus,
   RotateCcw,
-  CupSoda,
-  Coffee,
-  Sparkles,
   Flame,
   CheckCircle2,
-  Maximize2,
-  Minimize2,
-  Smartphone,
-  Zap,
-  Waves,
-  Star,
-  Layers,
   ArrowUp,
   ArrowDown,
   ArrowRight,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  ChevronDown,
-  ChevronUp
+  Maximize2,
+  Minimize2,
+  Sparkles
 } from 'lucide-react';
 import { UnitSystem, DrinkType, WaterLog } from '../types';
 import {
@@ -36,9 +24,9 @@ import {
 } from '../utils/calculations';
 import { getStoredLogs } from '../utils/storage';
 import {
+  ALL_DRINK_TYPES,
   DrinkTypeIcon,
-  getDrinkTypeMetadata,
-  ALL_DRINK_TYPES
+  getDrinkTypeMetadata
 } from '../utils/drinkTypes';
 import confetti from 'canvas-confetti';
 
@@ -73,6 +61,8 @@ export const COMMON_DRINK_SIZES: CommonDrinkSize[] = [
   { id: 'tumbler', name: 'Large Tumbler', ml: 750, flOz: 25.4, icon: 'tumbler' }
 ];
 
+const WIDGET_MODE_STORAGE_KEY = 'siplumo_widget_compact_mode_v1';
+
 export const HomeScreenWidget: React.FC<HomeScreenWidgetProps> = ({
   currentMl,
   targetMl,
@@ -87,687 +77,422 @@ export const HomeScreenWidget: React.FC<HomeScreenWidgetProps> = ({
   onOpenWhyTarget,
   className = ''
 }) => {
-  const [selectedDrinkType, setSelectedDrinkType] = useState<DrinkType>('water');
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
-  const [widgetMode, setWidgetMode] = useState<'standard' | 'compact_square' | 'linear_bar'>('standard');
-  const [showPhoneGuide, setShowPhoneGuide] = useState(false);
-  const [showTrendDetail, setShowTrendDetail] = useState(false);
+  const [selectedDrinkType, setSelectedDrinkType] = useState<DrinkType>('water');
+  const [isCompactMode, setIsCompactMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(WIDGET_MODE_STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
-  // Determine logs to analyze: use prop or fallback to stored logs
+  const toggleCompactMode = () => {
+    setIsCompactMode(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem(WIDGET_MODE_STORAGE_KEY, String(next));
+      } catch {
+        // Ignore storage notice
+      }
+      return next;
+    });
+  };
+
   const effectiveLogs = useMemo(() => {
     if (logs && logs.length > 0) return logs;
     return getStoredLogs();
   }, [logs]);
 
-  // Compute the user's most frequently consumed drink volume
   const mostFrequent: MostFrequentDrinkVolume = useMemo(() => {
-    return getMostFrequentDrinkVolume(effectiveLogs, defaultMl, selectedDrinkType);
-  }, [effectiveLogs, defaultMl, selectedDrinkType]);
+    return getMostFrequentDrinkVolume(effectiveLogs, defaultMl, 'water');
+  }, [effectiveLogs, defaultMl]);
 
-  // Compute Hydration Intake Velocity Trend (today vs yesterday at same time)
   const hydrationTrend: HydrationVelocityTrend = useMemo(() => {
     return calculateHydrationVelocityTrend(effectiveLogs, new Date(), unitSystem);
   }, [effectiveLogs, unitSystem]);
 
-  // Hydration percentage & completion calculations
   const percentage = targetMl > 0 ? Math.round((currentMl / targetMl) * 100) : 0;
+  const clampedPct = Math.min(100, Math.max(0, percentage));
   const isTargetMet = currentMl >= targetMl;
   const remainingMl = Math.max(0, targetMl - currentMl);
 
-  // SVG Circular Gauge calculations
-  const radius = 38;
+  // SVG Ring Geometry
+  const ringSize = 112;
+  const strokeWidth = 10;
+  const radius = (ringSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (Math.min(percentage, 100) / 100) * circumference;
+  const strokeDashoffset = circumference - (clampedPct / 100) * circumference;
 
   const handleQuickAdd = (amountMl: number, drinkType: DrinkType = selectedDrinkType) => {
     onAddWater(amountMl, drinkType);
 
     const formattedAmount = formatVolumeExact(amountMl, unitSystem);
-    setFeedbackMsg(`+${formattedAmount} ${drinkType} logged!`);
+    const drinkMeta = getDrinkTypeMetadata(drinkType);
+    setFeedbackMsg(`Added +${formattedAmount} of ${drinkMeta.shortLabel}`);
 
-    // Celebrate milestone if goal is achieved or surpassed
     if (currentMl + amountMl >= targetMl && currentMl < targetMl) {
       try {
         if (typeof confetti === 'function') {
           confetti({
-            particleCount: 55,
+            particleCount: 50,
             spread: 65,
-            origin: { y: 0.6 }
+            origin: { y: 0.65 }
           });
         }
-      } catch (e) {
-        // Safe in test or headless environments
+      } catch {
+        // Safe in headless/test environments
       }
     }
 
     setTimeout(() => {
       setFeedbackMsg(null);
-    }, 2400);
+    }, 2500);
   };
 
-  const renderDrinkIcon = (iconType: CommonDrinkSize['icon'], iconClass = 'w-4 h-4') => {
-    switch (iconType) {
-      case 'sip':
-        return <Droplet className={iconClass} />;
-      case 'mug':
-        return <Coffee className={iconClass} />;
-      case 'bottle':
-        return <Sparkles className={iconClass} />;
-      case 'tumbler':
-        return <Waves className={iconClass} />;
-      case 'glass':
-      default:
-        return <CupSoda className={iconClass} />;
-    }
-  };
-
-  // Helper to render the specific arrow icon based on velocity comparison
-  const renderTrendArrowIcon = (direction: HydrationTrendDirection, iconClass = 'w-3.5 h-3.5') => {
+  const renderTrendArrowIcon = (direction: HydrationTrendDirection, iconClass = 'w-4 h-4') => {
     switch (direction) {
       case 'up':
-        return <ArrowUp className={`${iconClass} stroke-[2.75]`} aria-label="Upward velocity trend" />;
+        return <ArrowUp className={`${iconClass} stroke-[2.5]`} aria-label="Ahead of yesterday" />;
       case 'down':
-        return <ArrowDown className={`${iconClass} stroke-[2.75]`} aria-label="Downward velocity trend" />;
+        return <ArrowDown className={`${iconClass} stroke-[2.5]`} aria-label="Behind yesterday" />;
       case 'flat':
       default:
-        return <ArrowRight className={`${iconClass} stroke-[2.75]`} aria-label="Flat velocity trend" />;
+        return <ArrowRight className={`${iconClass} stroke-[2.5]`} aria-label="Same pace as yesterday" />;
     }
   };
 
-  // Styles dynamically paired with trend direction
-  const trendTheme = useMemo(() => {
-    switch (hydrationTrend.direction) {
-      case 'up':
-        return {
-          badge: 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300',
-          badgeText: 'text-emerald-700 dark:text-emerald-300',
-          iconBg: 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400',
-          bannerBg: 'bg-gradient-to-r from-emerald-50/90 via-teal-50/80 to-sky-50/60 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-slate-900/40 border-emerald-200/80 dark:border-emerald-900/60',
-          accent: 'text-emerald-600 dark:text-emerald-400',
-          ring: 'ring-emerald-500/20'
-        };
-      case 'down':
-        return {
-          badge: 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300',
-          badgeText: 'text-amber-700 dark:text-amber-300',
-          iconBg: 'bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400',
-          bannerBg: 'bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-rose-50/50 dark:from-amber-950/40 dark:via-orange-950/30 dark:to-slate-900/40 border-amber-200/80 dark:border-amber-900/60',
-          accent: 'text-amber-600 dark:text-amber-400',
-          ring: 'ring-amber-500/20'
-        };
-      case 'flat':
-      default:
-        return {
-          badge: 'bg-sky-50 dark:bg-sky-950/60 border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-300',
-          badgeText: 'text-sky-700 dark:text-sky-300',
-          iconBg: 'bg-sky-100 dark:bg-sky-900/60 text-sky-600 dark:text-sky-400',
-          bannerBg: 'bg-gradient-to-r from-sky-50/90 via-cyan-50/70 to-slate-50/50 dark:from-sky-950/40 dark:via-cyan-950/30 dark:to-slate-900/40 border-sky-200/80 dark:border-sky-900/60',
-          accent: 'text-sky-600 dark:text-sky-400',
-          ring: 'ring-sky-500/20'
-        };
+  const friendlyTrendMessage = useMemo(() => {
+    if (hydrationTrend.direction === 'up') {
+      return {
+        title: 'Ahead of yesterday',
+        badgeLabel: 'Ahead',
+        subtitle: "You've had more water by this time than yesterday. Great job!",
+        color: 'text-emerald-700 dark:text-emerald-300',
+        bg: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+      };
     }
-  }, [hydrationTrend.direction]);
+    if (hydrationTrend.direction === 'down') {
+      return {
+        title: 'Behind yesterday',
+        badgeLabel: 'Catch up',
+        subtitle: 'Have a quick glass now to catch up to your usual daily pace.',
+        color: 'text-amber-700 dark:text-amber-300',
+        bg: 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+      };
+    }
+    return {
+      title: 'Right on track',
+      badgeLabel: 'On pace',
+      subtitle:
+        currentMl === 0
+          ? 'Tap Quick Log below to log your first drink of the day!'
+          : "You're drinking at the same steady pace as yesterday.",
+      color: 'text-sky-700 dark:text-sky-300',
+      bg: 'bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/60'
+    };
+  }, [hydrationTrend.direction, currentMl]);
+
+  const frequentDrinkMeta = getDrinkTypeMetadata(mostFrequent.drinkType);
+  const selectedDrinkMeta = getDrinkTypeMetadata(selectedDrinkType);
 
   return (
     <section
       aria-label="Home Screen Hydration Widget"
-      className={`relative bg-gradient-to-br from-white via-sky-50/40 to-cyan-50/30 dark:from-slate-900 dark:via-slate-900/95 dark:to-slate-800/80 border border-sky-200/70 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-sm transition-all overflow-hidden ${className}`}
+      className={`adaptive-card space-y-4 sm:space-y-5 ${className}`}
       data-testid="home-screen-widget"
     >
-      {/* Ambient background aura */}
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-sky-400/15 dark:bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
-
-      {/* Widget Header & Format Controls */}
-      <div className="flex items-center justify-between gap-2 mb-3.5 relative z-10">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-cyan-400 text-white flex items-center justify-center font-bold shadow-xs">
-            <Droplet className="w-4 h-4 fill-white/80" />
+      {/* Top Widget Header Bar */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 rounded-2xl bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-100 dark:border-sky-900/60 shrink-0">
+            <Droplet className="w-4 h-4 fill-sky-500/20" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                Home Screen Widget
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                Hydration Quick Widget
               </h3>
-              <span className="px-1.5 py-0.5 rounded-md bg-sky-100 dark:bg-sky-950/80 text-[10px] font-bold text-sky-700 dark:text-sky-300">
+              <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950 border border-sky-200/70 dark:border-sky-800/70 text-sky-700 dark:text-sky-300 text-[10px] font-bold uppercase tracking-wider shrink-0">
                 Live
               </span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Current hydration percentage, intake velocity &amp; quick log
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+              {isTargetMet
+                ? 'Daily goal reached!'
+                : `${formatVolume(remainingMl, unitSystem)} left to reach your goal`}
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-1">
+        {/* Right Header Actions: Undo + Compact/Full Toggle */}
+        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
           {hasLogsToUndo && onUndoLastLog && (
             <button
+              type="button"
               onClick={onUndoLastLog}
-              className="p-1.5 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors tap-active"
-              title="Undo last log"
-              aria-label="Undo last log"
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/50 hover:bg-rose-100 dark:hover:bg-rose-950/60 transition-colors flex items-center gap-1.5 tap-active min-h-[38px]"
+              title="Undo last drink"
+              data-testid="widget-undo-btn"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+              <span>Undo</span>
             </button>
           )}
 
-          {/* Guide for installing as an Android / iOS home screen widget */}
           <button
-            onClick={() => setShowPhoneGuide(!showPhoneGuide)}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors tap-active"
-            title="Home Screen Widget installation instructions"
-            aria-label="Home Screen Widget installation instructions"
+            type="button"
+            onClick={toggleCompactMode}
+            className="p-2 rounded-xl border border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors tap-active min-h-[38px] min-w-[38px] flex items-center justify-center"
+            title={isCompactMode ? 'Expand widget controls' : 'Switch to compact widget'}
+            aria-label={isCompactMode ? 'Expand widget controls' : 'Switch to compact widget'}
           >
-            <Smartphone className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Widget format toggle */}
-          <button
-            onClick={() => {
-              if (widgetMode === 'standard') setWidgetMode('compact_square');
-              else if (widgetMode === 'compact_square') setWidgetMode('linear_bar');
-              else setWidgetMode('standard');
-            }}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors tap-active"
-            title={`Current layout: ${widgetMode}. Tap to switch format.`}
-            aria-label="Switch widget view layout"
-          >
-            {widgetMode === 'standard' ? (
-              <Layers className="w-3.5 h-3.5" />
-            ) : widgetMode === 'compact_square' ? (
-              <Minimize2 className="w-3.5 h-3.5" />
+            {isCompactMode ? (
+              <Maximize2 className="w-4 h-4" />
             ) : (
-              <Maximize2 className="w-3.5 h-3.5" />
+              <Minimize2 className="w-4 h-4" />
             )}
           </button>
         </div>
       </div>
 
-      {/* Instant Action Feedback Toast */}
+      {/* Live Feedback Toast Banner */}
       {feedbackMsg && (
-        <div className="mb-3 p-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold flex items-center justify-between shadow-md animate-in fade-in slide-in-from-top-1 duration-150 relative z-20">
-          <div className="flex items-center gap-2">
+        <div className="p-3 rounded-2xl bg-emerald-600 text-white text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in duration-150">
+          <div className="flex items-center gap-2 min-w-0">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{feedbackMsg}</span>
+            <span className="truncate">{feedbackMsg}</span>
           </div>
-          <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-extrabold uppercase">
-            Updated
-          </span>
-        </div>
-      )}
-
-      {/* Phone Home Screen Pinning Guide */}
-      {showPhoneGuide && (
-        <div className="mb-3.5 p-3.5 rounded-2xl bg-sky-50 dark:bg-slate-800/90 border border-sky-200/80 dark:border-slate-700 text-xs space-y-2 animate-in fade-in">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 font-bold text-sky-800 dark:text-sky-300">
-              <Smartphone className="w-4 h-4 text-sky-600" />
-              <span>How to add SipLumo Widget to your Phone</span>
-            </div>
+          {hasLogsToUndo && onUndoLastLog && (
             <button
-              onClick={() => setShowPhoneGuide(false)}
-              className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              type="button"
+              onClick={() => {
+                onUndoLastLog();
+                setFeedbackMsg(null);
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold transition-colors shrink-0"
             >
-              Close
+              Undo
             </button>
-          </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-            Install SipLumo as a PWA / App to place this quick-log widget directly onto your Android or iPhone home screen. In Chrome, tap <span className="font-semibold text-slate-800 dark:text-white">Menu &rarr; Add to Home screen</span>. On iOS Safari, tap <span className="font-semibold text-slate-800 dark:text-white">Share &rarr; Add to Home Screen</span>.
-          </p>
+          )}
         </div>
       )}
 
-      {/* MODE 1: STANDARD EXPANDED BENTO WIDGET */}
-      {widgetMode === 'standard' && (
-        <div className="space-y-3">
-          {/* Main Widget Grid: Percentage Gauge on Left + Primary Most-Frequent Quick Log Button on Right */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-center bg-white/80 dark:bg-slate-900/80 border border-sky-100 dark:border-slate-800/80 rounded-2xl p-3.5 shadow-2xs">
-            
-            {/* Left: Hydration Percentage Circular Gauge & Quick Stats */}
-            <div className="sm:col-span-5 flex items-center justify-center sm:justify-start gap-3">
-              <div
-                className="relative w-20 h-20 shrink-0 flex items-center justify-center"
-                role="progressbar"
-                aria-valuenow={percentage}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label="Current hydration percentage"
-              >
-                <svg className="w-20 h-20 -rotate-90 transform" viewBox="0 0 90 90">
-                  <circle
-                    cx="45"
-                    cy="45"
-                    r={radius}
-                    className="text-slate-100 dark:text-slate-800"
-                    strokeWidth="8"
-                    stroke="currentColor"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="45"
-                    cy="45"
-                    r={radius}
-                    className={`transition-all duration-700 ease-out ${
-                      isTargetMet
-                        ? 'text-emerald-500 dark:text-emerald-400'
-                        : 'text-sky-500 dark:text-sky-400'
-                    }`}
-                    strokeWidth="8"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    strokeLinecap="round"
-                    stroke="currentColor"
-                    fill="transparent"
-                  />
-                </svg>
-
-                {/* Percentage Text Center */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
-                    {percentage}%
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    {isTargetMet ? 'Goal Met' : 'Hydrated'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Volume stats & Hydration Trend Chip */}
-              <div className="space-y-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-extrabold text-slate-900 dark:text-white tabular-nums">
-                    {formatVolume(currentMl, unitSystem)}
-                  </span>
-                  <span className="text-xs text-slate-400">/</span>
-                  <button
-                    onClick={onOpenWhyTarget}
-                    className="text-xs text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-300 font-semibold underline-offset-2 hover:underline"
-                    title="View hydration formula details"
-                  >
-                    {formatVolume(targetMl, unitSystem)}
-                  </button>
-                </div>
-
-                <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  {isTargetMet ? (
-                    <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Target Achieved!
-                    </span>
-                  ) : (
-                    <span>{formatVolume(remainingMl, unitSystem)} remaining</span>
-                  )}
-                </p>
-
-                {/* Hydration Trend Indicator Badge (with arrow icon) */}
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setShowTrendDetail(prev => !prev)}
-                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all tap-active ${trendTheme.badge}`}
-                    title="Hydration Trend: Click to view velocity details"
-                    data-testid="widget-hydration-trend-indicator"
-                    aria-label={`Hydration trend: ${hydrationTrend.label}, ${hydrationTrend.statusBadge}`}
-                  >
-                    <span className={`p-0.5 rounded-full ${trendTheme.iconBg} flex items-center justify-center shrink-0`}>
-                      {renderTrendArrowIcon(hydrationTrend.arrow, 'w-2.5 h-2.5')}
-                    </span>
-                    <span className="truncate">{hydrationTrend.label}</span>
-                  </button>
-
-                  {streak > 0 && onOpenAchievements && (
-                    <button
-                      onClick={onOpenAchievements}
-                      className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md hover:bg-amber-100 transition-colors"
-                    >
-                      <Flame className="w-3 h-3 fill-amber-500" />
-                      <span>{streak}d</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: PRIMARY 'QUICK LOG' BUTTON FOR USER'S MOST FREQUENT DRINK VOLUME */}
-            <div className="sm:col-span-7 flex flex-col justify-center sm:border-l sm:border-slate-100 sm:dark:border-slate-800 sm:pl-3.5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-bold">
-                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                  <span>Most Frequent Drink</span>
-                </div>
-                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                  {mostFrequent.isFallback
-                    ? 'Default preset'
-                    : `Logged ${mostFrequent.count} ${mostFrequent.count === 1 ? 'time' : 'times'}`}
-                </span>
-              </div>
-
-              {/* The Dedicated 'Quick Log' Button */}
-              <button
-                type="button"
-                onClick={() => handleQuickAdd(mostFrequent.amountMl, mostFrequent.drinkType)}
-                className="w-full py-3 px-3.5 bg-gradient-to-r from-sky-500 via-sky-600 to-teal-500 hover:from-sky-600 hover:via-sky-700 hover:to-teal-600 active:scale-[0.98] text-white font-extrabold text-sm rounded-2xl shadow-sm hover:shadow-md flex items-center justify-between gap-2 transition-all tap-active group border border-sky-400/30"
-                title={`Quick Log ${formatVolumeExact(mostFrequent.amountMl, unitSystem)} (Your most frequent drink)`}
-                data-testid="widget-quick-log-frequent-btn"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-white/20 flex items-center justify-center text-white group-hover:scale-105 transition-transform">
-                    <Plus className="w-4 h-4 stroke-[3px]" />
-                  </div>
-                  <div className="text-left">
-                    <div className="flex items-center gap-1.5 leading-tight">
-                      <span className="tracking-tight">Quick Log</span>
-                      <span className="px-1.5 py-0.2 rounded bg-white/25 text-[11px] font-black uppercase">
-                        +{formatVolumeExact(mostFrequent.amountMl, unitSystem)}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-white/80 font-medium capitalize">
-                      {mostFrequent.drinkType} &bull; 1-Tap Log
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center">
-                  <CupSoda className="w-3.5 h-3.5 text-white" />
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* DEDICATED HYDRATION TREND INDICATOR & IMMEDIATE ACTIONABLE FEEDBACK CARD */}
-          <div
-            className={`p-3 rounded-2xl border transition-all ${trendTheme.bannerBg}`}
-            data-testid="widget-hydration-trend-actionable-card"
-          >
-            <div className="flex items-start justify-between gap-2.5">
-              <div className="flex items-start gap-2.5 min-w-0">
-                <div className={`mt-0.5 p-1.5 rounded-xl ${trendTheme.iconBg} shrink-0 shadow-2xs`}>
-                  {renderTrendArrowIcon(hydrationTrend.arrow, 'w-4 h-4')}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-1">
-                      <span>Hydration Trend</span>
-                      <span className="text-slate-400">&bull;</span>
-                      <span className={trendTheme.accent}>{hydrationTrend.label}</span>
-                    </span>
-                    <span className={`text-[10px] font-black px-1.5 py-0.2 rounded-md ${trendTheme.iconBg}`}>
-                      {hydrationTrend.statusBadge}
-                    </span>
-                  </div>
-
-                  {/* Immediate Actionable Feedback */}
-                  <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300 leading-snug mt-1">
-                    {hydrationTrend.actionableFeedback}
-                  </p>
-                </div>
-              </div>
-
-              {/* Details toggle */}
-              <button
-                type="button"
-                onClick={() => setShowTrendDetail(!showTrendDetail)}
-                className="text-[10px] font-bold text-slate-500 hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-300 shrink-0 px-2 py-1 rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors flex items-center gap-0.5"
-                title="Toggle velocity details"
-              >
-                <span>{showTrendDetail ? 'Less' : 'Velocity'}</span>
-                {showTrendDetail ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-            </div>
-
-            {/* Expanded Velocity Comparison Details */}
-            {showTrendDetail && (
-              <div className="mt-2.5 pt-2.5 border-t border-slate-200/60 dark:border-slate-800/60 grid grid-cols-2 gap-2 text-[10px] animate-in fade-in">
-                <div className="bg-white/70 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-100 dark:border-slate-700/60">
-                  <span className="text-slate-500 dark:text-slate-400 block font-semibold">Today's Intake Velocity:</span>
-                  <span className="font-extrabold text-slate-800 dark:text-slate-100 tabular-nums text-xs">
-                    {hydrationTrend.todayVelocityMlPerHour} mL/h
-                  </span>
-                  <span className="text-[9px] text-slate-400 block mt-0.5">
-                    ({formatVolume(hydrationTrend.todayMlSoFar, unitSystem)} so far)
-                  </span>
-                </div>
-                <div className="bg-white/70 dark:bg-slate-800/80 p-2 rounded-xl border border-slate-100 dark:border-slate-700/60">
-                  <span className="text-slate-500 dark:text-slate-400 block font-semibold">Yesterday (at this time):</span>
-                  <span className="font-extrabold text-slate-800 dark:text-slate-100 tabular-nums text-xs">
-                    {hydrationTrend.yesterdayVelocityMlPerHour} mL/h
-                  </span>
-                  <span className="text-[9px] text-slate-400 block mt-0.5">
-                    ({formatVolume(hydrationTrend.yesterdayMlAtSameTime, unitSystem)} at this hour)
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Beverage Type Quick Selector */}
-          <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar py-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
-              Drink:
-            </span>
-            <div className="flex items-center gap-1">
-              {ALL_DRINK_TYPES.map(type => {
-                const isSelected = selectedDrinkType === type;
-                const meta = getDrinkTypeMetadata(type);
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setSelectedDrinkType(type)}
-                    className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all tap-active shrink-0 ${
-                      isSelected
-                        ? `${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText} shadow-xs ring-1 ring-sky-500/30 font-extrabold`
-                        : 'bg-white/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <DrinkTypeIcon type={type} className="w-3 h-3 shrink-0" />
-                    <span>{meta.shortLabel}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Quick-Add Drink Sizes Grid (Alternative sizes) */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between px-0.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Alternative Sizes
-              </span>
-              <span className="text-[10px] text-slate-400">
-                1-tap log to dashboard
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-              {COMMON_DRINK_SIZES.map(size => {
-                const isUserMostFrequent = size.ml === mostFrequent.amountMl;
-                const displayVol =
-                  unitSystem === 'imperial' ? `${size.flOz} oz` : `${size.ml} mL`;
-
-                return (
-                  <button
-                    key={size.id}
-                    type="button"
-                    onClick={() => handleQuickAdd(size.ml, selectedDrinkType)}
-                    className={`p-2.5 rounded-2xl border transition-all text-center flex flex-col items-center justify-center gap-1 tap-active min-h-[72px] relative group ${
-                      isUserMostFrequent
-                        ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-700 text-sky-900 dark:text-sky-100 shadow-xs'
-                        : 'bg-white dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-sky-200 hover:bg-sky-50/50 dark:hover:bg-slate-750'
-                    }`}
-                    title={`Log ${displayVol} ${size.name}`}
-                  >
-                    {isUserMostFrequent && (
-                      <span className="absolute -top-1.5 right-2 px-1.5 py-0.2 bg-amber-500 text-white text-[9px] font-black rounded-full shadow-2xs">
-                        ★ Top
-                      </span>
-                    )}
-
-                    <div className="w-7 h-7 rounded-xl bg-sky-100/80 dark:bg-slate-700 flex items-center justify-center text-sky-600 dark:text-sky-400 group-hover:scale-110 transition-transform">
-                      {renderDrinkIcon(size.icon, 'w-3.5 h-3.5')}
-                    </div>
-
-                    <span className="text-xs font-black leading-none text-slate-900 dark:text-white tabular-nums">
-                      +{displayVol}
-                    </span>
-
-                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate max-w-full">
-                      {size.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODE 2: COMPACT 2x2 ANDROID HOME SCREEN WIDGET */}
-      {widgetMode === 'compact_square' && (
-        <div className="p-3 flex flex-col items-center text-center space-y-2.5 bg-white/70 dark:bg-slate-900/60 rounded-2xl border border-sky-100/80 dark:border-slate-800">
-          <div className="flex items-center justify-between w-full px-1">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">
-              2x2 Widget
-            </span>
-            <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400">
-              {formatVolume(currentMl, unitSystem)} / {formatVolume(targetMl, unitSystem)}
-            </span>
-          </div>
-
-          {/* Centered Circular Gauge with Percentage */}
-          <div
-            className="relative w-28 h-28 flex items-center justify-center"
-            role="progressbar"
-            aria-valuenow={percentage}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="Hydration progress percentage"
-          >
-            <svg className="w-28 h-28 -rotate-90 transform" viewBox="0 0 90 90">
+      {/* Main Widget Core: Live Circular Percentage Gauge + Trend + 1-Tap Quick Log */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 items-center bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 sm:p-5">
+        {/* Left: Circular Hydration Percentage Ring + Volume Readout */}
+        <div className="md:col-span-5 flex items-center gap-3.5 sm:gap-4 min-w-0">
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 shrink-0 flex items-center justify-center">
+            <svg
+              className="w-full h-full -rotate-90"
+              viewBox={`0 0 ${ringSize} ${ringSize}`}
+              aria-label={`Hydration progress ${percentage}%`}
+            >
               <circle
-                cx="45"
-                cy="45"
+                cx={ringSize / 2}
+                cy={ringSize / 2}
                 r={radius}
-                className="text-slate-100 dark:text-slate-800"
-                strokeWidth="7"
+                fill="none"
                 stroke="currentColor"
-                fill="transparent"
+                strokeWidth={strokeWidth}
+                className="text-slate-200 dark:text-slate-700/70"
               />
               <circle
-                cx="45"
-                cy="45"
+                cx={ringSize / 2}
+                cy={ringSize / 2}
                 r={radius}
-                className={`transition-all duration-700 ease-out ${
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                className={`transition-all duration-500 ease-out ${
                   isTargetMet
                     ? 'text-emerald-500 dark:text-emerald-400'
                     : 'text-sky-500 dark:text-sky-400'
                 }`}
-                strokeWidth="7"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="transparent"
               />
             </svg>
 
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span
+                className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tabular-nums leading-none"
+                data-testid="widget-hydration-percentage"
+              >
                 {percentage}%
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
                 {isTargetMet ? 'Complete' : 'Hydrated'}
               </span>
             </div>
           </div>
 
-          {/* Hydration Trend Indicator Pill with Arrow Icon */}
-          <div
-            className={`w-full py-1 px-2.5 rounded-xl border flex items-center justify-between text-[10px] font-bold transition-all ${trendTheme.badge}`}
-            data-testid="widget-trend-compact-indicator"
-            title={hydrationTrend.actionableFeedback}
-          >
-            <div className="flex items-center gap-1.5 truncate">
-              <span className={`p-0.5 rounded-full ${trendTheme.iconBg} shrink-0`}>
-                {renderTrendArrowIcon(hydrationTrend.arrow, 'w-2.5 h-2.5')}
+          {/* Current / Target Volume & Streak */}
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <div>
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
+                Today's Intake
               </span>
-              <span className="truncate">{hydrationTrend.label}</span>
+              <div className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tabular-nums leading-tight truncate">
+                {formatVolumeExact(currentMl, unitSystem)}
+              </div>
+              <button
+                type="button"
+                onClick={onOpenWhyTarget}
+                className="text-xs text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 tabular-nums transition-colors text-left"
+              >
+                of {formatVolumeExact(targetMl, unitSystem)} goal
+              </button>
             </div>
-            <span className="text-[9px] font-black shrink-0">{hydrationTrend.statusBadge}</span>
+
+            {streak > 0 && (
+              <button
+                type="button"
+                onClick={onOpenAchievements}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200/70 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 text-[11px] font-bold tap-active"
+              >
+                <Flame className="w-3 h-3 fill-amber-500 text-amber-500 shrink-0" />
+                <span className="tabular-nums">{streak} day streak</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Hydration Trend Indicator + 1-Tap Most Frequent Drink Quick Log */}
+        <div className="md:col-span-7 space-y-3 min-w-0">
+          {/* Hydration Trend Indicator Card */}
+          <div
+            className="flex items-start gap-3 p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800"
+            data-testid="widget-hydration-trend-actionable-card"
+          >
+            <div
+              className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 mt-0.5 ${friendlyTrendMessage.bg}`}
+              data-testid="widget-hydration-trend-indicator"
+            >
+              {renderTrendArrowIcon(hydrationTrend.arrow, 'w-4 h-4')}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className={`text-xs font-bold ${friendlyTrendMessage.color}`}>
+                  {friendlyTrendMessage.title}
+                </span>
+                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                  vs. yesterday
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                {friendlyTrendMessage.subtitle}
+              </p>
+            </div>
           </div>
 
-          {/* Single Prominent 'Quick Log' Button for Most Frequent Drink Volume */}
+          {/* 1-Tap Quick Log Button for Most Frequently Consumed Drink Volume */}
           <button
             type="button"
             onClick={() => handleQuickAdd(mostFrequent.amountMl, mostFrequent.drinkType)}
-            className="w-full py-2.5 px-3 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 text-white font-bold text-xs rounded-xl shadow-xs flex items-center justify-center gap-2 transition-all tap-active"
-            title={`Quick Log ${formatVolumeExact(mostFrequent.amountMl, unitSystem)}`}
+            className="w-full py-3 sm:py-3.5 px-3.5 sm:px-4 bg-sky-600 hover:bg-sky-700 active:scale-[0.99] text-white font-bold text-sm rounded-2xl border border-sky-500/40 shadow-xs flex items-center justify-between gap-2.5 transition-all tap-active min-h-[54px]"
+            title={`Quick Log ${formatVolumeExact(mostFrequent.amountMl, unitSystem)} of ${frequentDrinkMeta.shortLabel}`}
+            data-testid="widget-quick-log-frequent-btn"
           >
-            <Plus className="w-4 h-4 stroke-[3px]" />
-            <span>Quick Log {formatVolumeExact(mostFrequent.amountMl, unitSystem)}</span>
-            <span className="text-[10px] opacity-80">({mostFrequent.isFallback ? 'Favorite' : `${mostFrequent.count}x`})</span>
-          </button>
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+                <Plus className="w-5 h-5 stroke-[2.5px]" />
+              </div>
+              <div className="text-left min-w-0">
+                <span className="block leading-tight text-xs sm:text-sm font-extrabold tabular-nums truncate">
+                  Quick Log +{formatVolumeExact(mostFrequent.amountMl, unitSystem)}
+                </span>
+                <span className="text-[11px] text-sky-100 font-medium block mt-0.5 truncate">
+                  {mostFrequent.isFallback
+                    ? `Standard ${frequentDrinkMeta.shortLabel} glass`
+                    : `Your favorite ${frequentDrinkMeta.shortLabel} (${mostFrequent.count}x logged)`}
+                </span>
+              </div>
+            </div>
 
-          {/* Immediate Actionable Feedback */}
-          <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-tight px-1 text-center font-medium">
-            {hydrationTrend.actionableFeedback}
-          </p>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/15 border border-white/20 text-xs font-semibold text-white shrink-0">
+              <DrinkTypeIcon type={mostFrequent.drinkType} className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden min-[360px]:inline">1-Tap</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded Interactive Widget Controls: Drink Type Selector + Instant Cup Sizes */}
+      {!isCompactMode && (
+        <div className="space-y-3 pt-1">
+          {/* Drink Type Selector Row */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Widget Quick-Tap Sizes ({selectedDrinkMeta.shortLabel})
+            </span>
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">
+              Tap any size to log immediately
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+            {ALL_DRINK_TYPES.map(type => {
+              const isSelected = selectedDrinkType === type;
+              const meta = getDrinkTypeMetadata(type);
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSelectedDrinkType(type)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all tap-active border min-h-[38px] ${
+                    isSelected
+                      ? `${meta.badgeBg} ${meta.badgeBorder} ${meta.badgeText}`
+                      : 'bg-slate-50 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                  }`}
+                >
+                  <DrinkTypeIcon type={type} className="w-3.5 h-3.5 shrink-0" />
+                  <span>{meta.shortLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 5 Common Cup Size Buttons - Responsive Auto-Adjusting Grid */}
+          <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-5 gap-2">
+            {COMMON_DRINK_SIZES.map((size, idx) => (
+              <button
+                key={size.id}
+                type="button"
+                onClick={() => handleQuickAdd(size.ml, selectedDrinkType)}
+                className={`p-2.5 sm:p-3 rounded-2xl bg-slate-50 hover:bg-sky-50/80 dark:bg-slate-800/70 dark:hover:bg-slate-800 border border-slate-200/90 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-600 flex flex-col items-center justify-center gap-1 transition-all active:scale-95 tap-active min-h-[60px] ${
+                  idx === COMMON_DRINK_SIZES.length - 1 ? 'col-span-2 min-[420px]:col-span-1' : ''
+                }`}
+                title={`Log ${formatVolumeExact(size.ml, unitSystem)} of ${selectedDrinkMeta.shortLabel}`}
+                data-testid={`widget-size-btn-${size.id}`}
+              >
+                <div className="flex items-center gap-1.5">
+                  <DrinkTypeIcon
+                    type={selectedDrinkType}
+                    className={`w-3.5 h-3.5 shrink-0 ${selectedDrinkMeta.iconColor}`}
+                  />
+                  <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums">
+                    +{formatVolumeExact(size.ml, unitSystem)}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-full">
+                  {size.name}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* MODE 3: HORIZONTAL LINEAR BAR WIDGET */}
-      {widgetMode === 'linear_bar' && (
-        <div className="space-y-2.5 bg-white/70 dark:bg-slate-900/60 p-3 rounded-2xl border border-sky-100/80 dark:border-slate-800">
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm text-slate-900 dark:text-white">
-                {percentage}%
-              </span>
-              <span className="text-slate-400 text-[11px]">
-                ({formatVolume(currentMl, unitSystem)} / {formatVolume(targetMl, unitSystem)})
-              </span>
-            </div>
-
-            {/* Inline Hydration Trend Indicator with Arrow Icon */}
-            <div
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold ${trendTheme.badge}`}
-              title={hydrationTrend.actionableFeedback}
-              data-testid="widget-trend-linear-indicator"
-            >
-              {renderTrendArrowIcon(hydrationTrend.arrow, 'w-2.5 h-2.5')}
-              <span>{hydrationTrend.label}</span>
-              <span className="opacity-80 font-normal">({hydrationTrend.statusBadge})</span>
-            </div>
+      {/* Goal Reached Banner inside Widget */}
+      {isTargetMet && (
+        <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 flex items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-200">
+          <div className="flex items-center gap-2 font-semibold min-w-0">
+            <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span className="truncate">You hit 100% of your daily hydration goal today!</span>
           </div>
-
-          <div className="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ease-out ${
-                isTargetMet ? 'bg-emerald-500' : 'bg-gradient-to-r from-sky-500 to-teal-400'
-              }`}
-              style={{ width: `${Math.min(percentage, 100)}%` }}
-            />
-          </div>
-
-          {/* Actionable Feedback summary */}
-          <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-tight flex items-center gap-1.5 px-0.5">
-            <span className={`p-0.5 rounded-full ${trendTheme.iconBg} shrink-0`}>
-              {renderTrendArrowIcon(hydrationTrend.arrow, 'w-2.5 h-2.5')}
-            </span>
-            <span className="truncate font-medium">{hydrationTrend.actionableFeedback}</span>
-          </p>
-
-          {/* Quick Log Button for Most Frequent Drink Volume */}
-          <div className="pt-0.5 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickAdd(mostFrequent.amountMl, mostFrequent.drinkType)}
-              className="flex-1 py-2 px-3 bg-gradient-to-r from-sky-500 to-teal-500 hover:from-sky-600 hover:to-teal-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all tap-active"
-            >
-              <Plus className="w-3.5 h-3.5 stroke-[2.5px]" />
-              <span>Quick Log {formatVolumeExact(mostFrequent.amountMl, unitSystem)}</span>
-              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded font-semibold">★ Most Frequent</span>
-            </button>
-          </div>
+          <span className="font-bold tabular-nums shrink-0">{percentage}%</span>
         </div>
       )}
     </section>

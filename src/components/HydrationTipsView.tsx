@@ -5,14 +5,10 @@ import {
   Sun,
   Activity,
   HeartPulse,
-  AlertTriangle,
   ChevronDown,
   ChevronUp,
-  BookOpen,
-  Check
+  BookOpen
 } from 'lucide-react';
-import { MedicalDisclaimerBanner } from './MedicalDisclaimerBanner';
-import { BannerAd } from './BannerAd';
 
 export const HydrationTipsView: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
@@ -20,85 +16,70 @@ export const HydrationTipsView: React.FC = () => {
   const tips = [
     {
       icon: Droplets,
-      title: 'Pacing vs Chugging',
-      desc: 'The human body absorbs water most efficiently when consumed in moderate portions (150-250 mL) spaced throughout waking hours, rather than drinking massive amounts at once.',
-      tag: 'Absorption'
+      title: 'Sip Steadily All Day',
+      desc: 'Your body absorbs water best when you drink small glasses throughout the day rather than chugging a lot all at once.'
     },
     {
       icon: Sun,
-      title: 'Urine Color Indicator',
-      desc: 'A pale straw or light yellow color is a simple indicator of healthy hydration. Clear urine often indicates excess fluid, while dark honey or amber indicates you should drink more.',
-      tag: 'Self-Check'
+      title: 'Start Your Morning Right',
+      desc: 'Drinking a glass of water right after waking up helps wake up your body and replaces water lost overnight.'
     },
     {
       icon: Activity,
-      title: 'Electrolytes & Workout',
-      desc: 'During intense workouts lasting over 60 minutes or heavy sweating, pure water should be supplemented with electrolytes (sodium, potassium) to maintain proper osmotic balance.',
-      tag: 'Exercise'
+      title: 'Drink More When Active',
+      desc: 'When you exercise or spend time in warm weather, have an extra glass of water before and after to stay energized.'
     },
     {
-      icon: AlertTriangle,
-      title: 'Overhydration Awareness',
-      desc: 'Drinking extreme amounts of fluid in a short timeframe can dilute blood sodium (hyponatremia). Listen to natural thirst cues and avoid forcing water beyond comfortable limits.',
-      tag: 'Safety'
+      icon: HeartPulse,
+      title: 'Listen to Your Body',
+      desc: 'Drink whenever you feel thirsty, and avoid forcing uncomfortable amounts of water in a short time.'
     }
   ];
 
   const faqs = [
     {
-      q: 'Does tea, coffee, or infused water count toward my intake?',
-      a: 'Yes, moderate tea, infused fruit water, and even coffee contribute to your fluid intake. However, plain water remains the ideal foundation without added sugars or excess caffeine.'
+      q: 'Do tea, coffee, and juice count toward my daily goal?',
+      a: 'Yes! Tea, coffee, milk, and juice all help keep you hydrated. Plain water is still the best everyday choice because it has no sugar or extra calories.'
     },
     {
-      q: 'How does food contribute to hydration?',
-      a: 'Most adults receive 20% to 30% of their total daily fluid from dietary water in fruits (watermelon, oranges), vegetables (cucumbers, celery), soups, and cooked grains.'
+      q: 'Does food help keep me hydrated too?',
+      a: 'Yes, fruits and vegetables like watermelon, oranges, cucumbers, and soups provide about a quarter of the water your body needs each day.'
     },
     {
-      q: 'Why should I avoid drinking large volumes right before sleep?',
-      a: 'Consuming large glasses of water within 1-2 hours of bedtime can lead to nocturia (waking up to urinate), disrupting restorative deep sleep cycles.'
-    },
-    {
-      q: 'When should I consult a doctor regarding fluid intake?',
-      a: 'Always consult your physician if you have chronic kidney disease, congestive heart failure, liver cirrhosis, or are taking prescribed loop diuretics that mandate precise fluid restrictions.'
+      q: 'Should I drink water right before bed?',
+      a: 'It is best to finish most of your water 1 to 2 hours before sleeping so you can enjoy a full, uninterrupted night of rest.'
     }
   ];
 
   return (
-    <div className="space-y-4 pb-12 animate-in fade-in">
+    <div className="space-y-5 pb-8 animate-in fade-in">
       
       {/* Header card */}
-      <div className="bg-gradient-to-r from-sky-600 to-teal-600 text-white rounded-3xl p-5 shadow-sm space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
-            <Lightbulb className="w-5 h-5 text-white" />
-          </div>
-          <h2 className="text-base font-extrabold">
-            Hydration Knowledge & Tips
-          </h2>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-2xl bg-sky-50 dark:bg-sky-950 flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+          <Lightbulb className="w-5 h-5" />
         </div>
-        <p className="text-xs text-sky-100 leading-relaxed">
-          Evidence-based guidance on fluid pacing, electrolyte balance, and healthy daily hydration habits.
-        </p>
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            Everyday Hydration Tips
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Simple habits to help you feel your best every day
+          </p>
+        </div>
       </div>
 
-      <MedicalDisclaimerBanner />
-
       {/* Core Tips Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         {tips.map((tip, idx) => {
           const Icon = tip.icon;
           return (
             <div
               key={idx}
-              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-sm space-y-2"
+              className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 space-y-2.5"
             >
-              <div className="flex items-center justify-between">
-                <div className="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                  <Icon className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  {tip.tag}
-                </span>
+              <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <Icon className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                 {tip.title}
@@ -111,12 +92,12 @@ export const HydrationTipsView: React.FC = () => {
         })}
       </div>
 
-      {/* FAQs Section */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3">
+      {/* Common Questions */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 space-y-3">
         <div className="flex items-center gap-2 mb-1">
           <BookOpen className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Frequently Asked Questions
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            Common Questions
           </h3>
         </div>
 
@@ -129,8 +110,9 @@ export const HydrationTipsView: React.FC = () => {
                 className="border border-slate-200/70 dark:border-slate-800 rounded-2xl overflow-hidden"
               >
                 <button
+                  type="button"
                   onClick={() => setOpenFaq(isOpen ? null : idx)}
-                  className="w-full p-3.5 text-left flex items-center justify-between bg-slate-50/70 hover:bg-slate-100/70 dark:bg-slate-800/60 transition-colors"
+                  className="w-full p-4 text-left flex items-center justify-between bg-slate-50/70 hover:bg-slate-100/70 dark:bg-slate-800/60 transition-colors"
                 >
                   <span className="text-xs font-bold text-slate-900 dark:text-white pr-2">
                     {faq.q}
@@ -143,7 +125,7 @@ export const HydrationTipsView: React.FC = () => {
                 </button>
 
                 {isOpen && (
-                  <div className="p-3.5 bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800">
+                  <div className="p-4 bg-white dark:bg-slate-900 text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800">
                     {faq.a}
                   </div>
                 )}
@@ -152,9 +134,6 @@ export const HydrationTipsView: React.FC = () => {
           })}
         </div>
       </div>
-
-      {/* Auto-Resizing Banner Ad */}
-      <BannerAd />
 
     </div>
   );
